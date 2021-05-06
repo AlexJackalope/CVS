@@ -3,9 +3,11 @@ import argparse
 import os
 import sys
 import filecmp
+import difflib
+import pickle
 
 
-class StatesComparer:
+class DirContentComparer:
     def __init__(self, path, files):
         self._root = path
         self._repository = os.path.join(self._root, "repository")
@@ -74,6 +76,30 @@ class StatesComparer:
                 self.add_files_in_new_dirs(new_dirs)
 
 
+class FilesComparer:
+    def __init__(self, file_pairs):
+        self.files = file_pairs
+        self.deltas = {}
+
+    def compare(self):
+        for pair in self.files:
+            file1 = open(pair[0], 'r')
+            file2 = open(pair[1], 'r')
+            diff = difflib.unified_diff(file1.readlines(), file2.readlines())
+            file1.close()
+            file2.close()
+            self.deltas[pair[1]] = diff
+
+
+class UnidiffRestorer:
+    def restore_start_file(self, start_file, final_file, unidiff):
+        filestr = 0
+        file = open(final_file, 'r')
+        final_text = file.readlines()
+        file.close()
+
+
+
 def is_dir_empty(path):
     return not os.listdir(path)
 
@@ -106,21 +132,34 @@ def init(path):
 def add(path, files_to_add):
     check_repository(path)
     print("Repository is OK, start comparing.")
-    comparer = StatesComparer(path, files_to_add)
-    comparer.compare()
-    add_console_log(path, comparer)
+    dir_comparer = DirContentComparer(path, files_to_add)
+    dir_comparer.compare()
+    add_console_log(path, dir_comparer)
+    last_path = os.path.join(path, "repository", "last_state")
+    filesToCompare = [[os.path.join(last_path,
+                                    os.path.join(last_path,
+                                                 os.path.relpath(x, path))),
+                       x] for x in dir_comparer.changed]
+    files_comparer = FilesComparer(filesToCompare)
+    files_comparer.compare()
+    print(files_comparer.deltas)
 
 
 def add_console_log(path, comparer):
     print("    Added files:")
-    for file in comparer.added:
-        print(os.path.relpath(file, path))
+    log_paths(path, comparer.added)
     print("    Deleted files:")
-    for file in comparer.deleted:
-        print(os.path.relpath(file, path))
+    log_paths(path, comparer.deleted)
     print("    Changed files:")
-    for file in comparer.changed:
-        print(os.path.relpath(file, path))
+    log_paths(path, comparer.changed)
+
+
+def log_paths(path, to_log):
+    if len(to_log) == 0:
+        print("No files")
+    else:
+        for file in to_log:
+            print(os.path.relpath(file, path))
 
 
 def does_dir_exist(path):
