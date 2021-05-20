@@ -2,15 +2,19 @@ from pathlib import Path
 import argparse
 import os
 import sys
+import shutil
 import filecmp
 import difflib
 import pickle
+import shutil
+import subprocess
 
 
 class DirContentComparer:
     def __init__(self, path, files):
         self._root = path
         self._repository = os.path.join(self._root, "repository")
+        self._last_state = os.path.join(self._repository, "last_state")
         self._first_iter = True
         self._files = self.full_paths_to_files(path, files)
         self.added = []
@@ -24,25 +28,30 @@ class DirContentComparer:
 
     def full_closure_compare(self, repo, orig):
         cmp = filecmp.dircmp(repo, orig, ignore=["repository"])
-        a = cmp.left_only
-        self.deleted.extend(self.full_paths_to_files(orig, cmp.left_only))
+        relative_repo_folder = os.path.relpath(repo, self._last_state)
+        if relative_repo_folder == '.':
+            relative_repo_folder = ''
+        self.deleted.extend(self.full_paths_to_files(
+            relative_repo_folder, cmp.left_only))
 
         all_added = self.full_paths_to_files(orig, cmp.right_only)
         added_dirs, added_files = self.split_dirs_and_files(all_added)
         requested_added = self.requested_files_from_dir(added_files)
-        self.added.extend(requested_added)
+        self.added.extend(self.relative_paths_to_files(requested_added))
         if len(added_dirs) > 0:
             self.add_files_in_new_dirs(added_dirs)
 
         changed_files = self.full_paths_to_files(orig, cmp.diff_files)
         requested_changed = self.requested_files_from_dir(changed_files)
-        self.changed.extend(requested_changed)
+        self.changed.extend(self.relative_paths_to_files(requested_changed))
 
         subdirs = [file.path for file in os.scandir(orig) if file.is_dir()]
         if self._first_iter:
             self._first_iter = False
             subdirs.remove(self._repository)
         for subdir in subdirs:
+            if subdir in added_dirs:
+                continue
             repo_changed_dir = os.path.join(repo, os.path.basename(subdir))
             self.full_closure_compare(repo_changed_dir, subdir)
 
@@ -54,6 +63,10 @@ class DirContentComparer:
 
     def full_paths_to_files(self, path, files):
         return list(map(lambda x: os.path.join(path, x), files))
+
+    def relative_paths_to_files(self, files):
+        return list(map(lambda x: os.path.relpath(x, self._root)
+        if os.path.relpath(x, self._root) != '.' else '', files))
 
     def split_dirs_and_files(self, names):
         dirs = []
@@ -71,7 +84,7 @@ class DirContentComparer:
             new_dirs, new_files = self.split_dirs_and_files(
                 self.full_paths_to_files(new_dir, dir_content))
             requested_added = self.requested_files_from_dir(new_files)
-            self.added.extend(requested_added)
+            self.added.extend(self.relative_paths_to_files(requested_added))
             if len(new_dirs) > 0:
                 self.add_files_in_new_dirs(new_dirs)
 
@@ -81,23 +94,19 @@ class FilesComparer:
         self.files = file_pairs
         self.deltas = {}
 
-    def compare(self):
+    def compareFiles(self):
         for pair in self.files:
             file1 = open(pair[0], 'r')
             file2 = open(pair[1], 'r')
-            diff = difflib.unified_diff(file1.readlines(), file2.readlines())
+            self.compare(file1.readlines(), file2.readlines(), pair[1])
             file1.close()
             file2.close()
-            self.deltas[pair[1]] = diff
+        return self.deltas
 
-
-class UnidiffRestorer:
-    def restore_start_file(self, start_file, final_file, unidiff):
-        filestr = 0
-        file = open(final_file, 'r')
-        final_text = file.readlines()
-        file.close()
-
+    def compare(self, file1, file2, name):
+        diff = difflib.unified_diff(file1, file2)
+        diff_str = [x for x in diff]
+        self.deltas[name] = diff_str
 
 
 def is_dir_empty(path):
@@ -110,10 +119,10 @@ def check_repository(path):
         sys.exit("Repository is not initialized, "
                  "call 'init' in an empty folder to do it.")
     objects = does_dir_exist(os.path.join(repository, "objects"))
-    index = (os.path.exists(os.path.join(repository, "index.bin")) and
-             os.path.isfile(os.path.join(repository, "index.bin")))
-    logs = (os.path.exists(os.path.join(repository, "logs.bin")) and
-            os.path.isfile(os.path.join(repository, "logs.bin")))
+    index = (os.path.exists(os.path.join(repository, "index.dat")) and
+             os.path.isfile(os.path.join(repository, "index.dat")))
+    logs = (os.path.exists(os.path.join(repository, "logs.dat")) and
+            os.path.isfile(os.path.join(repository, "logs.dat")))
     if not (objects and index and logs):
         sys.exit("Repository is damaged.")
 
@@ -124,8 +133,8 @@ def init(path):
     os.mkdir(os.path.join(path, "repository"))
     os.mkdir(os.path.join(path, "repository", "objects"))
     os.mkdir(os.path.join(path, "repository", "last_state"))
-    Path(os.path.join(path, "repository", "index.bin")).touch()
-    Path(os.path.join(path, "repository", "logs.bin")).touch()
+    Path(os.path.join(path, "repository", "index.dat")).touch()
+    Path(os.path.join(path, "repository", "logs.dat")).touch()
     print("Repository initialized")
 
 
@@ -136,13 +145,33 @@ def add(path, files_to_add):
     dir_comparer.compare()
     add_console_log(path, dir_comparer)
     last_path = os.path.join(path, "repository", "last_state")
-    filesToCompare = [[os.path.join(last_path,
-                                    os.path.join(last_path,
-                                                 os.path.relpath(x, path))),
-                       x] for x in dir_comparer.changed]
+    filesToCompare = [[os.path.join(last_path, x),
+                       os.path.join(path, x)] for x in dir_comparer.changed]
     files_comparer = FilesComparer(filesToCompare)
-    files_comparer.compare()
-    print(files_comparer.deltas)
+    diffs = files_comparer.compareFiles()
+    info = {"Added": dir_comparer.added, "Deleted": dir_comparer.deleted, "Changed": diffs}
+    index_file = os.path.join(path, "repository", "index.dat")
+    update_last_state(path, dir_comparer)
+    '''with open(index_file, 'wb') as dump_out:
+        pickle.dump(info, dump_out)'''
+    print("Adding finished")
+    '''with open(index_file, 'rb') as dump_in:
+        der = pickle.load(dump_in)'''
+
+def update_last_state(path, comparer):
+    repo_path = os.path.join(path, "repository", "last_state")
+    for file in comparer.deleted:
+        to_delete = os.path.join(repo_path, file)
+        subprocess.call(['chmod', '000', to_delete])
+        if os.path.isdir(to_delete):
+            shutil.rmtree(to_delete)
+        else:
+            os.remove(to_delete)
+    for file in comparer.added:
+        to_add = os.path.join(path, file)
+        dst_file = Path(os.path.join(repo_path, file)).touch()
+        shutil.copytree(to_add, dst_file)
+            #repo_file = os.path.join(repo_path, "index.dat")
 
 
 def add_console_log(path, comparer):
@@ -159,7 +188,7 @@ def log_paths(path, to_log):
         print("No files")
     else:
         for file in to_log:
-            print(os.path.relpath(file, path))
+            print(file)
 
 
 def does_dir_exist(path):
