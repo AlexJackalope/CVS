@@ -162,15 +162,23 @@ def update_last_state(path, comparer):
     repo_path = os.path.join(path, "repository", "last_state")
     for file in comparer.deleted:
         to_delete = os.path.join(repo_path, file)
-        subprocess.call(['chmod', '000', to_delete])
+        os.chmod(to_delete, 0o777)
         if os.path.isdir(to_delete):
             shutil.rmtree(to_delete)
         else:
             os.remove(to_delete)
     for file in comparer.added:
         to_add = os.path.join(path, file)
-        dst_file = Path(os.path.join(repo_path, file)).touch()
-        shutil.copytree(to_add, dst_file)
+        copy_path = os.path.join(repo_path, file)
+        copy_dir_path = os.path.dirname(copy_path)
+        if not os.path.exists(copy_dir_path):
+            os.makedirs(copy_dir_path)
+        Path(copy_path).touch()
+        shutil.copyfile(to_add, copy_path)
+    for file in comparer.changed:
+        changed = os.path.join(path, file)
+        copy_path = os.path.join(repo_path, file)
+        shutil.copyfile(changed, copy_path)
             #repo_file = os.path.join(repo_path, "index.dat")
 
 
