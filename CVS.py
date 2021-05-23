@@ -4,75 +4,8 @@ import os
 import sys
 import pickle
 import shutil
-from itertools import islice
-from collections import deque
 from Comparers import DirContentComparer, FilesComparer
-
-
-class CommitInfo:
-    def __init__(self, branch=None, tag=None, comment=None, previous=None, this=None, commit=None):
-        self.branch = branch
-        self.tag = tag
-        self.comment = comment
-        self.prev_commit_line = previous
-        self.this_commit_line = this
-        self.commit = commit
-
-    def set_last_commit_info(self, logs_file):
-        info_list = []
-        with open(logs_file) as f:
-            info_list = list(deque(f, 7))
-        if len(info_list) < 7:
-            return
-        self.init_info(info_list)
-
-    def set_commit_info_by_line(self, logs_file, line):
-        file = open(logs_file)
-        lines = islice(file, line - 1, None)
-        info_list = file.readlines(7)
-        self.init_info(info_list)
-
-    def init_info(self, info_list):
-        self.branch = info_list[0]
-        self.tag = info_list[1]
-        self.comment = info_list[2]
-        self.prev_commit_line = info_list[3]
-        self.this_commit_line = info_list[4]
-        self.commit = info_list[5]
-        self.index = info_list[6]
-
-    def set_next_commit_in_branch(self, prev_commit, tag, comment, line, commit, index):
-        self.branch = prev_commit.branch
-        self.tag = tag
-        self.comment = comment
-        self.prev_commit_line = prev_commit.this_commit_line
-        self.this_commit_line = line
-        self.commit = commit
-        self.index = index
-
-    def set_init_commit(self, tag, comment, commit):
-        self.branch = 'main'
-        self.tag = tag
-        self.comment = comment
-        self.prev_commit_line = None
-        self.this_commit_line = 0
-        self.commit = commit
-        self.index = 0
-
-    def log_info_to_file(self, logs_file):
-        with open(logs_file, 'a') as logs:
-            self._log_value(self.branch, logs)
-            self._log_value(self.tag, logs)
-            self._log_value(self.comment, logs)
-            self._log_value(self.prev_commit_line, logs)
-            self._log_value(self.this_commit_line, logs)
-            self._log_value(self.commit, logs)
-            self._log_value(self.index, logs)
-
-    def _log_value(self, value, opened_file):
-        if value:
-            opened_file.write(value)
-        opened_file.write('\n')
+from CommitInfo import CommitInfo
 
 
 def is_dir_empty(path):
@@ -88,14 +21,18 @@ def check_repository(path):
         sys.exit("Repository is not initialized, "
                  "call 'init' in an empty folder to do it.")
     objects = does_dir_exist(os.path.join(repository, "objects"))
-    index = (os.path.exists(os.path.join(repository, "index.dat")) and
-             os.path.isfile(os.path.join(repository, "index.dat")))
-    tags = (os.path.exists(os.path.join(repository, "tags.dat")) and
-             os.path.isfile(os.path.join(repository, "tags.dat")))
-    logs = (os.path.exists(os.path.join(repository, "logs.txt")) and
-            os.path.isfile(os.path.join(repository, "logs.txt")))
-    if not (objects and index and tags and logs):
+    index = check_file(repository, "index.dat")
+    tags = check_file(repository, "tags.dat")
+    branches = check_file(repository, "branches.dat")
+    commits = check_file(repository, "commits.dat")
+    head = check_file(repository, "head.txt")
+    logs = check_file(repository, "logs.txt")
+    if not (objects and index and tags and branches and commits and head and logs):
         sys.exit("Repository is damaged.")
+
+def check_file(repository, filename):
+    return (os.path.exists(os.path.join(repository, filename)) and
+             os.path.isfile(os.path.join(repository, filename)))
 
 
 def init(path):
@@ -106,6 +43,9 @@ def init(path):
     os.mkdir(os.path.join(path, "repository", "last_state"))
     Path(os.path.join(path, "repository", "index.dat")).touch()
     Path(os.path.join(path, "repository", "tags.dat")).touch()
+    Path(os.path.join(path, "repository", "branches.dat")).touch()
+    Path(os.path.join(path, "repository", "commits.dat")).touch()
+    Path(os.path.join(path, "repository", "head.txt")).touch()
     Path(os.path.join(path, "repository", "logs.txt")).touch()
     print("Repository initialized")
 
@@ -113,6 +53,7 @@ def init(path):
 def add(path, files_to_add):
     check_repository(path)
     print("Repository is OK, start comparing.")
+    print()
     dir_comparer = DirContentComparer(path, files_to_add)
     dir_comparer.compare()
     add_console_log(path, dir_comparer)
@@ -126,9 +67,8 @@ def add(path, files_to_add):
     with open(index_file, 'ab') as dump_out:
         pickle.dump(info, dump_out)
     update_last_state(path, dir_comparer)
+    print()
     print("Adding finished")
-    '''with open(index_file, 'rb') as dump_in:
-        der = pickle.load(dump_in)'''
 
 
 def update_last_state(path, comparer):
@@ -155,40 +95,86 @@ def update_last_state(path, comparer):
 
 
 def add_console_log(path, comparer):
-    print("    Added files:")
+    print("Added files:")
     log_paths(path, comparer.added)
-    print("    Deleted files:")
+    print("Deleted files:")
     log_paths(path, comparer.deleted)
-    print("    Changed files:")
+    print("Changed files:")
     log_paths(path, comparer.changed)
 
 
 def log_paths(path, to_log):
     if len(to_log) == 0:
-        print("No files")
+        print("    No files")
     else:
         for file in to_log:
-            print(file)
+            print("   ", file)
 
 
 def commit(path, tag=None, comment=None):
     check_repository(path)
     print("Repository is OK, start committing.")
+    print()
     index_file = os.path.join(path, "repository", "index.dat")
+    commits_file = os.path.join(path, "repository", "commits.dat")
+    tags_file = os.path.join(path, "repository", "tags.dat")
+    branches_file = os.path.join(path, "repository", "branches.dat")
     logs_file = os.path.join(path, "repository", "logs.txt")
-    last_commit = CommitInfo()
-    last_commit.set_last_commit_info(logs_file)
-    commit_index = 1
-    if last_commit.commit is not None:
-        commit_index = last_commit.index + 1
+    head_record = os.path.join(path, "repository", "head.txt")
+
+    if tag is not None:
+        with open(tags_file, 'rb') as tags:
+            while True:
+                try:
+                    pair = pickle.load(tags)
+                    if tag == pair[0]:
+                        print("This tag is already used, you can't give it to new commit")
+                        return
+                except EOFError:
+                    break
+
+    commit_index = len(os.listdir(os.path.join(path, "repository", "objects")))
     commit_file = os.path.join(path, "repository", "objects", str(commit_index) + ".dat")
     shutil.copyfile(index_file, commit_file)
+    with open(index_file, 'wb'):
+        pass
+
+    head = ''
+    with open(head_record, 'r') as f:
+        head = f.read()
+    last_commit = None
+    commits_dict = {}
+    if head != '':
+        with open(commits_file, 'rb') as commits:
+            commits_dict = pickle.load(commits)
+            last_commit = commits_dict[head]
     current_commit = CommitInfo()
-    if last_commit.commit is None:
+    if last_commit is None:
         current_commit.set_init_commit(tag, comment, commit_file)
-        current_commit.log_info_to_file(logs_file)
     else:
-        current_commit.set_next_commit_in_branch(last_commit, tag, comment, 9, commit_file, 1)
+        current_commit.set_next_commit_in_branch(last_commit, tag, comment, commit_index)
+
+    if tag is not None:
+        with open(tags_file, 'ab') as tags:
+            tag_pair = [tag, current_commit]
+            pickle.dump(tag_pair, tags)
+
+    commits_dict[commit_index] = current_commit
+    with open(commits_file, 'wb') as commits:
+        pickle.dump(commits_dict, commits)
+
+    with open(head_record, 'w') as head:
+        head.write(str(commit_index))
+
+    branches_dict = {}
+    if last_commit is not None:
+        with open(branches_file, 'rb') as branches:
+            branches_dict = pickle.load(branches)
+    branches_dict[current_commit.branch] = current_commit
+    with open(branches_file, 'wb') as branches:
+        pickle.dump(branches_dict, branches)
+
+    current_commit.log_info_to_file(logs_file)
     print('Committing finished')
 
 
@@ -198,7 +184,7 @@ def parse_args():
     parser.add_argument("path", help="path to a folder with repository")
     parser.add_argument("files", nargs='*',
                         help="bunch of files to add (only for 'add' command)")
-    parser.add_argument("-c", "--comment", help="comment for new commit")
+    parser.add_argument("-c", "--comment", nargs='+', help="comment for new commit")
     parser.add_argument("-t", "--tag", help="tag of the commit")
     return parser.parse_args()
 
