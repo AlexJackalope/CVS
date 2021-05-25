@@ -82,7 +82,7 @@ class DirContentComparer:
                 self.add_files_in_new_dirs(new_dirs)
 
 class FilesComparer:
-    def __init__(self, file_pairs):
+    def __init__(self, file_pairs=None):
         self.files = file_pairs
         self.deltas = {}
 

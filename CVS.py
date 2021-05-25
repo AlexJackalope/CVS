@@ -203,7 +203,38 @@ def reset(path, tag):
         head_index = f.read()
     resets_track = queue.Queue()
     get_resets_track(path, resets_track, head_index, tag_commit_index)
-    print()
+    resets_track.get()
+    while not resets_track.empty():
+        step_commit = resets_track.get()
+        commit_file = os.path.join(path, "repository", "objects", step_commit + ".dat")
+        deltas_info = None
+        with open(commit_file, 'rb') as commit:
+            deltas_info = pickle.load(commit)
+        for file in deltas_info["Added"]:
+            absolute_file = os.path.join(path, file)
+            os.chmod(absolute_file, 0o777)
+            if os.path.isdir(absolute_file):
+                shutil.rmtree(absolute_file)
+            else:
+                os.remove(absolute_file)
+        for file_info in deltas_info["Deleted"]:
+            file = file_info[0]
+            content = file_info[1]
+            absolute_file = os.path.join(path, file)
+            file_dir_path = os.path.dirname(absolute_file)
+            if not os.path.exists(file_dir_path):
+                os.makedirs(file_dir_path)
+            Path(absolute_file).touch()
+            with open(absolute_file, 'w') as f:
+                f.writelines(content)
+        for file in deltas_info["Changed"]:
+            file_lines = ''
+            with open(file, 'r') as f:
+                file_lines = f.readlines()
+            comparer = FilesComparer()
+            reset_lines = comparer.reset_start(deltas_info["Changed"][file], file_lines)
+            with open(file, 'w') as f:
+                f.writelines(reset_lines)
 
 
 def get_commit_info_by_tag(path, tag):
