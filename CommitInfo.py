@@ -32,21 +32,21 @@ class CommitInfo:
         self.next_commit_index = info_list[4]
         self.commit_index = info_list[5]
 
-    def set_next_commit_in_branch(self, prev_commit, tag, comment, commit):
+    def set_next_commit_in_branch(self, prev_commit, tag, comment, commit_index):
         self.branch = prev_commit.branch
         self.tag = tag
         self.comment = comment
         self.prev_commit_index = prev_commit.commit_index
-        prev_commit.next_commit_index = commit
-        self.commit_index = commit
+        prev_commit.next_commit_index = str(commit_index)
+        self.commit_index = str(commit_index)
 
-    def set_init_commit(self, tag, comment, commit):
+    def set_init_commit(self, tag, comment, commit_index):
         self.branch = 'main'
         self.tag = tag
         self.comment = comment
         self.prev_commit_index = None
-        self.next_commit_index = 0
-        self.commit_index = commit
+        self.next_commit_index = str(0)
+        self.commit_index = str(commit_index)
 
     def log_info_to_file(self, logs_file):
         with open(logs_file, 'a') as logs:

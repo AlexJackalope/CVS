@@ -128,7 +128,7 @@ def commit(path, tag=None, comment=None):
                 try:
                     pair = pickle.load(tags)
                     if tag == pair[0]:
-                        print("This tag is already used, you can't give it to new commit")
+                        sys.exit("This tag is already used, you can't give it to new commit")
                         return
                 except EOFError:
                     break
@@ -150,7 +150,7 @@ def commit(path, tag=None, comment=None):
             last_commit = commits_dict[head]
     current_commit = CommitInfo()
     if last_commit is None:
-        current_commit.set_init_commit(tag, comment, commit_file)
+        current_commit.set_init_commit(tag, comment, commit_index)
     else:
         current_commit.set_next_commit_in_branch(last_commit, tag, comment, commit_index)
 
@@ -159,7 +159,7 @@ def commit(path, tag=None, comment=None):
             tag_pair = [tag, current_commit]
             pickle.dump(tag_pair, tags)
 
-    commits_dict[commit_index] = current_commit
+    commits_dict[str(commit_index)] = current_commit
     with open(commits_file, 'wb') as commits:
         pickle.dump(commits_dict, commits)
 
@@ -184,7 +184,7 @@ def parse_args():
     parser.add_argument("path", help="path to a folder with repository")
     parser.add_argument("files", nargs='*',
                         help="bunch of files to add (only for 'add' command)")
-    parser.add_argument("-c", "--comment", nargs='+', help="comment for new commit")
+    parser.add_argument("-c", "--comment", help="comment for new commit")
     parser.add_argument("-t", "--tag", help="tag of the commit")
     return parser.parse_args()
 
