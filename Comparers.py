@@ -3,7 +3,7 @@ import filecmp
 import difflib
 
 class DirContentComparer:
-    def __init__(self, path, files):
+    def __init__(self, path, files=None):
         self._root = path
         self._repository = os.path.join(self._root, "repository")
         self._last_state = os.path.join(self._repository, "last_state")
@@ -48,10 +48,11 @@ class DirContentComparer:
             self.full_closure_compare(repo_changed_dir, subdir)
 
     def requested_files_from_dir(self, dir_files):
-        if len(self._files) > 0:
-            return list(set(dir_files) & set(self._files))
-        else:
+        if self._files is None or len(self._files) > 0:
             return dir_files
+        else:
+            return list(set(dir_files) & set(self._files))
+
 
     def full_paths_to_files(self, path, files):
         return list(map(lambda x: os.path.join(path, x), files))
