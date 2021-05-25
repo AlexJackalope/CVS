@@ -232,7 +232,7 @@ def reset(path, tag):
             with open(file, 'r') as f:
                 file_lines = f.readlines()
             comparer = FilesComparer()
-            reset_lines = comparer.reset_start(deltas_info["Changed"][file], file_lines)
+            reset_lines = comparer.previous_file_version(file_lines, deltas_info["Changed"][file])
             with open(file, 'w') as f:
                 f.writelines(reset_lines)
 

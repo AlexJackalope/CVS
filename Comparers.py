@@ -1,6 +1,9 @@
+import copy
 import os
 import filecmp
 import difflib
+import re
+
 
 class DirContentComparer:
     def __init__(self, path, files=None):
@@ -53,7 +56,6 @@ class DirContentComparer:
         else:
             return list(set(dir_files) & set(self._files))
 
-
     def full_paths_to_files(self, path, files):
         return list(map(lambda x: os.path.join(path, x), files))
 
@@ -96,6 +98,58 @@ class FilesComparer:
         return self.deltas
 
     def compare(self, file1, file2, name):
-        diff = difflib.unified_diff(file1, file2)
+        diff = difflib.unified_diff(file1, file2, n=0)
         diff_str = [x for x in diff]
         self.deltas[name] = diff_str
+
+    def previous_file_version(self, str_file2, deltas):
+        """
+        По дельте и файлу последующей версии возвращает предыдущую версию файла
+        """
+        new_file = copy.deepcopy(str_file2)
+        count_rem_str = 0
+        for i in range(2, len(deltas)):
+            if re.match(r'@@', deltas[i]) is None:
+                continue
+            add_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@', deltas[i])[2].split(',')
+            add_start_index = int(add_str[0])
+            add_count = 1 if len(add_str) == 1 else int(add_str[1])
+            for k in range(add_start_index, add_start_index + add_count):
+                new_file.pop(k - count_rem_str - 1)
+                count_rem_str += 1
+        for i in range(2, len(deltas)):
+            if re.match(r'@@', deltas[i]) is None:
+                continue
+            rem_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@', deltas[i])[1].split(',')
+            rem_start_index = int(rem_str[0])
+            rem_count = 1 if len(rem_str) == 1 else int(rem_str[1])
+            for k in range(rem_start_index, add_start_index + rem_count):
+                new_file.insert(k - 1, deltas[i + k - add_start_index + 1][1:] + '\n')
+        return new_file
+
+    def next_file_version(self, str_file_1, deltas):
+        """
+        По дельте и файлу предыдущей версии возвращает последующую версию файла
+        """
+        new_file = copy.deepcopy(str_file_1)
+        count_rem_str = 0
+        for i in range(2, len(deltas)):
+            if re.match(r'@@', deltas[i]) is None:
+                continue
+            rem_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@', deltas[i])[1].split(',')
+            rem_start_index = int(rem_str[0])
+            rem_count = 1 if len(rem_str) == 1 else int(rem_str[1])
+            for k in range(rem_start_index, rem_start_index + rem_count):
+                new_file.pop(k - count_rem_str - 1)
+                count_rem_str += 1
+        for i in range(2, len(deltas)):
+            if re.match(r'@@', deltas[i]) is None:
+                continue
+            rem_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@', deltas[i])[1].split(',')
+            rem_count = 1 if len(rem_str) == 1 else int(rem_str[1])
+            add_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@', deltas[i])[2].split(',')
+            add_start_index = int(add_str[0])
+            add_count = 1 if len(add_str) == 1 else int(add_str[1])
+            for k in range(add_start_index, add_start_index + add_count):
+                new_file.insert(k - 1, deltas[rem_count + i + k - add_start_index + 1][1:] + '\n')
+        return new_file
