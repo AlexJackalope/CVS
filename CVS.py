@@ -55,15 +55,15 @@ def add(path, files_to_add):
     check_repository(path)
     print("Repository is OK, start comparing.")
     print()
-    dir_comparer = DirContentComparer(path, files_to_add)
-    dir_comparer.compare()
+    dir_comparer = DirContentComparer(path)
+    dir_comparer.compare(files_to_add)
     add_console_log(path, dir_comparer)
     last_path = os.path.join(path, "repository", "last_state")
     filesToCompare = [[os.path.join(last_path, x),
                        os.path.join(path, x)] for x in dir_comparer.changed]
     files_comparer = FilesComparer(filesToCompare)
     diffs = files_comparer.compareFiles()
-    deleted = deleted_content(dir_comparer.deleted)
+    deleted = deleted_content(path, dir_comparer.deleted)
     info = {"Added": dir_comparer.added, "Deleted": deleted, "Changed": diffs}
     index_file = os.path.join(path, "repository", "index.dat")
     with open(index_file, 'ab') as dump_out:
@@ -113,10 +113,11 @@ def log_paths(path, to_log):
             print("   ", file)
 
 
-def deleted_content(deleted_files):
+def deleted_content(path, deleted_files):
     file_to_content = {}
     for file in deleted_files:
-        with open(file, 'r') as f:
+        deleted = os.path.join(path, "repository", "last_state", file)
+        with open(deleted, 'r') as f:
             file_to_content[file] = f.readlines()
     return file_to_content
 
@@ -184,6 +185,10 @@ def commit(path, tag=None, comment=None):
         pickle.dump(branches_dict, branches)
 
     current_commit.log_info_to_file(logs_file)
+    if tag is not None:
+        print('Commited with tag', tag)
+    if comment is not None:
+        print('Comment:', comment)
     print('Committing finished')
 
 
@@ -203,23 +208,21 @@ def reset(path, tag):
         head_index = f.read()
     resets_track = queue.Queue()
     get_resets_track(path, resets_track, head_index, tag_commit_index)
-    resets_track.get()
     while not resets_track.empty():
         step_commit = resets_track.get()
         commit_file = os.path.join(path, "repository", "objects", step_commit + ".dat")
-        deltas_info = None
+        deltas_info = {}
         with open(commit_file, 'rb') as commit:
             deltas_info = pickle.load(commit)
-        for file in deltas_info["Added"]:
-            absolute_file = os.path.join(path, file)
+        for added_file in deltas_info["Added"]:
+            absolute_file = os.path.join(path, added_file)
             os.chmod(absolute_file, 0o777)
             if os.path.isdir(absolute_file):
                 shutil.rmtree(absolute_file)
             else:
                 os.remove(absolute_file)
-        for file_info in deltas_info["Deleted"]:
-            file = file_info[0]
-            content = file_info[1]
+        for file in deltas_info["Deleted"]:
+            content = deltas_info["Deleted"][file]
             absolute_file = os.path.join(path, file)
             file_dir_path = os.path.dirname(absolute_file)
             if not os.path.exists(file_dir_path):
@@ -235,6 +238,7 @@ def reset(path, tag):
             reset_lines = comparer.previous_file_version(file_lines, deltas_info["Changed"][file])
             with open(file, 'w') as f:
                 f.writelines(reset_lines)
+    print('Resetting finished.')
 
 
 def get_commit_info_by_tag(path, tag):

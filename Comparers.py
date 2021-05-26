@@ -6,17 +6,17 @@ import re
 
 
 class DirContentComparer:
-    def __init__(self, path, files=None):
+    def __init__(self, path):
         self._root = path
         self._repository = os.path.join(self._root, "repository")
         self._last_state = os.path.join(self._repository, "last_state")
         self._first_iter = True
-        self._files = self.full_paths_to_files(path, files)
         self.added = []
         self.deleted = []
         self.changed = []
 
-    def compare(self):
+    def compare(self, files):
+        self._files = self.full_paths_to_files(self._root, files)
         last_state = os.path.join(self._repository, "last_state")
         self.full_closure_compare(last_state, self._root)
         self._first_iter = True
@@ -51,10 +51,10 @@ class DirContentComparer:
             self.full_closure_compare(repo_changed_dir, subdir)
 
     def requested_files_from_dir(self, dir_files):
-        if self._files is None or len(self._files) > 0:
-            return dir_files
-        else:
+        if len(self._files) > 0:
             return list(set(dir_files) & set(self._files))
+        else:
+            return dir_files
 
     def full_paths_to_files(self, path, files):
         return list(map(lambda x: os.path.join(path, x), files))
