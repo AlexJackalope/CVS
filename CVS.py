@@ -234,8 +234,8 @@ def reset(path, tag):
             file_lines = ''
             with open(file, 'r') as f:
                 file_lines = f.readlines()
-            comparer = FilesComparer()
-            reset_lines = comparer.previous_file_version(file_lines, deltas_info["Changed"][file])
+            reset_lines = FilesComparer().previous_file_version(file_lines,
+                                                                deltas_info["Changed"][file])
             with open(file, 'w') as f:
                 f.writelines(reset_lines)
     print('Resetting finished.')
@@ -254,9 +254,9 @@ def get_commit_info_by_tag(path, tag):
 
 
 def get_resets_track(path, track, current, final):
-    track.put(current)
     if current == final:
         return
+    track.put(current)
     commits_file = os.path.join(path, "repository", "commits.dat")
     commits_dict = {}
     with open(commits_file, 'rb') as commits:
