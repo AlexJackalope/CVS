@@ -102,7 +102,8 @@ class FilesComparer:
         diff_str = [x for x in diff]
         self.deltas[name] = diff_str
 
-    def previous_file_version(self, str_file2, deltas):
+    @staticmethod
+    def previous_file_version(str_file2, deltas):
         """
         По дельте и файлу последующей версии возвращает предыдущую версию файла
         """
@@ -123,11 +124,12 @@ class FilesComparer:
             rem_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@', deltas[i])[1].split(',')
             rem_start_index = int(rem_str[0])
             rem_count = 1 if len(rem_str) == 1 else int(rem_str[1])
-            for k in range(rem_start_index, add_start_index + rem_count):
-                new_file.insert(k - 1, deltas[i + k - add_start_index + 1][1:] + '\n')
+            for k in range(rem_start_index, rem_start_index + rem_count):
+                new_file.insert(k - 1, deltas[i + k - rem_start_index + 1][1:] + '\n')
         return new_file
 
-    def next_file_version(self, str_file_1, deltas):
+    @staticmethod
+    def next_file_version(str_file_1, deltas):
         """
         По дельте и файлу предыдущей версии возвращает последующую версию файла
         """
