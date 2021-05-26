@@ -42,7 +42,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/CVS.py" />
-      <option name="PARAMETERS" value="reset C:\Users\alexa\ForCVS -t=&quot;b&quot;" />
+      <option name="PARAMETERS" value="reset C:\Users\alexa\ForCVS -t=&quot;x&quot;" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -123,28 +123,23 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/CVS.py</url>
-          <line>232</line>
+          <line>236</line>
           <option name="timeStamp" value="21" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>111</line>
-          <option name="timeStamp" value="23" />
+          <url>file://$PROJECT_DIR$/CVS.py</url>
+          <line>240</line>
+          <option name="timeStamp" value="27" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>112</line>
-          <option name="timeStamp" value="24" />
+          <line>128</line>
+          <option name="timeStamp" value="28" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>114</line>
-          <option name="timeStamp" value="25" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>115</line>
-          <option name="timeStamp" value="26" />
+          <url>file://$PROJECT_DIR$/CVS.py</url>
+          <line>242</line>
+          <option name="timeStamp" value="29" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

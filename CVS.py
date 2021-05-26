@@ -173,16 +173,7 @@ def commit(path, tag=None, comment=None):
     with open(commits_file, 'wb') as commits:
         pickle.dump(commits_dict, commits)
 
-    with open(head_record, 'w') as head:
-        head.write(str(commit_index))
-
-    branches_dict = {}
-    if last_commit is not None:
-        with open(branches_file, 'rb') as branches:
-            branches_dict = pickle.load(branches)
-    branches_dict[current_commit.branch] = current_commit
-    with open(branches_file, 'wb') as branches:
-        pickle.dump(branches_dict, branches)
+    set_head_commit(head_record, branches_file, str(commit_index))
 
     current_commit.log_info_to_file(logs_file)
     if tag is not None:
@@ -190,6 +181,19 @@ def commit(path, tag=None, comment=None):
     if comment is not None:
         print('Comment:', comment)
     print('Committing finished')
+
+
+def set_head_commit(head_record, branches_file, new_head_commit):
+    with open(head_record, 'w') as head:
+        head.write(new_head_commit.commit_index )
+
+    branches_dict = {}
+    if new_head_commit.prev_commit_index is not None:
+        with open(branches_file, 'rb') as branches:
+            branches_dict = pickle.load(branches)
+    branches_dict[new_head_commit.branch] = new_head_commit
+    with open(branches_file, 'wb') as branches:
+        pickle.dump(branches_dict, branches)
 
 
 def reset(path, tag):
@@ -238,6 +242,14 @@ def reset(path, tag):
                                                                 deltas_info["Changed"][file])
             with open(file, 'w') as f:
                 f.writelines(reset_lines)
+
+    branches_file = os.path.join(path, "repository", "branches.dat")
+    new_head_commit = CommitInfo()
+    commits_file = os.path.join(path, "repository", "commits.dat")
+    with open(commits_file, 'rb') as f:
+        commit_dict = pickle.load(f)
+        new_head_commit = commit_dict[tag_commit_index]
+    set_head_commit(head_record, branches_file, new_head_commit)
     print('Resetting finished.')
 
 

@@ -125,7 +125,7 @@ class FilesComparer:
             rem_start_index = int(rem_str[0])
             rem_count = 1 if len(rem_str) == 1 else int(rem_str[1])
             for k in range(rem_start_index, rem_start_index + rem_count):
-                new_file.insert(k - 1, deltas[i + k - rem_start_index + 1][1:] + '\n')
+                new_file.insert(k - 1, deltas[i + k - rem_start_index + 1][1:])
         return new_file
 
     @staticmethod
@@ -153,5 +153,5 @@ class FilesComparer:
             add_start_index = int(add_str[0])
             add_count = 1 if len(add_str) == 1 else int(add_str[1])
             for k in range(add_start_index, add_start_index + add_count):
-                new_file.insert(k - 1, deltas[rem_count + i + k - add_start_index + 1][1:] + '\n')
+                new_file.insert(k - 1, deltas[rem_count + i + k - add_start_index + 1][1:])
         return new_file
