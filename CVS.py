@@ -1,7 +1,6 @@
 from pathlib import Path
 import argparse
-import os
-import sys
+import os, sys
 import pickle
 import shutil
 import queue
@@ -9,57 +8,65 @@ from Comparers import DirContentComparer, FilesComparer
 from CommitInfo import CommitInfo
 
 
+class RepositoryInfo:
+    def __init__(self, path):
+        self.path = path
+        self.last_state = os.path.join(path, "repository", "last_state")
+        self.objects = os.path.join(path, "repository", "objects")
+        self.branches = os.path.join(path, "repository", "branches.dat")
+        self.commits = os.path.join(path, "repository", "commits.dat")
+        self.head = os.path.join(path, "repository", "head.txt")
+        self.index = os.path.join(path, "repository", "index.dat")
+        self.logs = os.path.join(path, "repository", "logs.txt")
+        self.tags = os.path.join(path, "repository", "tags.dat")
+        self.repo_files = [self.branches, self.commits, self.head, self.index, self.logs, self.tags]
+
+    @staticmethod
+    def does_dir_exist(path):
+        return os.path.exists(path) and os.path.isdir(path)
+
+    @staticmethod
+    def check_file(file):
+        return (os.path.exists(file) and os.path.isfile(file))
+
+    def check_repository(self):
+        repository = os.path.join(self.path, "repository")
+        if not self.does_dir_exist(repository):
+            sys.exit("Repository is not initialized, "
+                     "call 'init' in an empty folder to do it.")
+        objects = RepositoryInfo.does_dir_exist(self.objects)
+        last_state = RepositoryInfo.does_dir_exist(self.last_state)
+        if not (objects and last_state):
+            sys.exit("Repository is damaged.")
+        for file in self.repo_files:
+            if not self.check_file(file):
+                sys.exit("Repository is damaged.")
+
 def is_dir_empty(path):
     return not os.listdir(path)
-
-def does_dir_exist(path):
-    return os.path.exists(path) and os.path.isdir(path)
-
-
-def check_repository(path):
-    repository = os.path.join(path, "repository")
-    if not does_dir_exist(repository):
-        sys.exit("Repository is not initialized, "
-                 "call 'init' in an empty folder to do it.")
-    objects = does_dir_exist(os.path.join(repository, "objects"))
-    index = check_file(repository, "index.dat")
-    tags = check_file(repository, "tags.dat")
-    branches = check_file(repository, "branches.dat")
-    commits = check_file(repository, "commits.dat")
-    head = check_file(repository, "head.txt")
-    logs = check_file(repository, "logs.txt")
-    if not (objects and index and tags and branches and commits and head and logs):
-        sys.exit("Repository is damaged.")
-
-def check_file(repository, filename):
-    return (os.path.exists(os.path.join(repository, filename)) and
-             os.path.isfile(os.path.join(repository, filename)))
 
 
 def init(path):
     if not is_dir_empty(path):
         sys.exit("To initialize a repository choose an empty folder")
+    repo = RepositoryInfo(path)
     os.mkdir(os.path.join(path, "repository"))
-    os.mkdir(os.path.join(path, "repository", "objects"))
-    os.mkdir(os.path.join(path, "repository", "last_state"))
-    Path(os.path.join(path, "repository", "index.dat")).touch()
-    Path(os.path.join(path, "repository", "tags.dat")).touch()
-    Path(os.path.join(path, "repository", "branches.dat")).touch()
-    Path(os.path.join(path, "repository", "commits.dat")).touch()
-    Path(os.path.join(path, "repository", "head.txt")).touch()
-    Path(os.path.join(path, "repository", "logs.txt")).touch()
+    os.mkdir(repo.objects)
+    os.mkdir(repo.last_state)
+    for file in repo.repo_files:
+        Path(file).touch()
     print("Repository initialized")
 
 
 def add(path, files_to_add):
-    check_repository(path)
+    repo = RepositoryInfo(path)
+    repo.check_repository()
     print("Repository is OK, start comparing.")
     print()
     dir_comparer = DirContentComparer(path)
     dir_comparer.compare(files_to_add)
-    add_console_log(path, dir_comparer)
-    last_path = os.path.join(path, "repository", "last_state")
-    filesToCompare = [[os.path.join(last_path, x),
+    status_console_log(path, dir_comparer)
+    filesToCompare = [[os.path.join(repo.last_state, x),
                        os.path.join(path, x)] for x in dir_comparer.changed]
     files_comparer = FilesComparer(filesToCompare)
     diffs = files_comparer.compareFiles()
@@ -96,7 +103,7 @@ def update_last_state(path, comparer):
         shutil.copyfile(changed, copy_path)
 
 
-def add_console_log(path, comparer):
+def status_console_log(path, comparer):
     print("Added files:")
     log_paths(path, comparer.added)
     print("Deleted files:")
@@ -107,34 +114,30 @@ def add_console_log(path, comparer):
 
 def log_paths(path, to_log):
     if len(to_log) == 0:
-        print("    No files")
+        print("\tNo files")
     else:
         for file in to_log:
-            print("   ", file)
+            print("\t" + file)
 
 
 def deleted_content(path, deleted_files):
     file_to_content = {}
     for file in deleted_files:
         deleted = os.path.join(path, "repository", "last_state", file)
+        os.chmod(deleted, 0o777)
         with open(deleted, 'r') as f:
             file_to_content[file] = f.readlines()
     return file_to_content
 
 
 def commit(path, tag=None, comment=None):
-    check_repository(path)
+    repo = RepositoryInfo(path)
+    repo.check_repository()
     print("Repository is OK, start committing.")
     print()
-    index_file = os.path.join(path, "repository", "index.dat")
-    commits_file = os.path.join(path, "repository", "commits.dat")
-    tags_file = os.path.join(path, "repository", "tags.dat")
-    branches_file = os.path.join(path, "repository", "branches.dat")
-    logs_file = os.path.join(path, "repository", "logs.txt")
-    head_record = os.path.join(path, "repository", "head.txt")
 
     if tag is not None:
-        with open(tags_file, 'rb') as tags:
+        with open(repo.tags, 'rb') as tags:
             while True:
                 try:
                     pair = pickle.load(tags)
@@ -145,17 +148,17 @@ def commit(path, tag=None, comment=None):
 
     commit_index = len(os.listdir(os.path.join(path, "repository", "objects")))
     commit_file = os.path.join(path, "repository", "objects", str(commit_index) + ".dat")
-    shutil.copyfile(index_file, commit_file)
-    with open(index_file, 'wb'):
+    shutil.copyfile(repo.index, commit_file)
+    with open(repo.index, 'wb'):
         pass
 
     head = ''
-    with open(head_record, 'r') as f:
+    with open(repo.head, 'r') as f:
         head = f.read()
     last_commit = None
     commits_dict = {}
     if head != '':
-        with open(commits_file, 'rb') as commits:
+        with open(repo.commits, 'rb') as commits:
             commits_dict = pickle.load(commits)
             last_commit = commits_dict[head]
     current_commit = CommitInfo()
@@ -165,19 +168,19 @@ def commit(path, tag=None, comment=None):
         current_commit.set_next_commit_in_branch(last_commit, tag, comment, commit_index)
 
     if tag is not None:
-        with open(tags_file, 'ab') as tags:
+        with open(repo.tags, 'ab') as tags:
             tag_pair = [tag, current_commit]
             pickle.dump(tag_pair, tags)
 
     commits_dict[str(commit_index)] = current_commit
-    with open(commits_file, 'wb') as commits:
+    with open(repo.commits, 'wb') as commits:
         pickle.dump(commits_dict, commits)
 
-    set_head_commit(head_record, branches_file, str(commit_index))
+    set_head_commit(repo.head, repo.branches, current_commit)
 
-    current_commit.log_info_to_file(logs_file)
+    current_commit.log_info_to_file(repo.logs)
     if tag is not None:
-        print('Commited with tag', tag)
+        print('Commited with tag:', tag)
     if comment is not None:
         print('Comment:', comment)
     print('Committing finished')
@@ -185,7 +188,7 @@ def commit(path, tag=None, comment=None):
 
 def set_head_commit(head_record, branches_file, new_head_commit):
     with open(head_record, 'w') as head:
-        head.write(new_head_commit.commit_index )
+        head.write(new_head_commit.commit_index)
 
     branches_dict = {}
     if new_head_commit.prev_commit_index is not None:
@@ -197,7 +200,8 @@ def set_head_commit(head_record, branches_file, new_head_commit):
 
 
 def reset(path, tag):
-    check_repository(path)
+    repo = RepositoryInfo(path)
+    repo.check_repository()
     print("Repository is OK, start checking last commit.")
     print()
     relevant = is_last_commit_relevant(path)
@@ -206,15 +210,14 @@ def reset(path, tag):
     print("Last commit is relevant, start resetting.")
     print()
     tag_commit_index = get_commit_info_by_tag(path, tag).commit_index
-    head_record = os.path.join(path, "repository", "head.txt")
     head_index = ''
-    with open(head_record, 'r') as f:
+    with open(repo.head, 'r') as f:
         head_index = f.read()
     resets_track = queue.Queue()
     get_resets_track(path, resets_track, head_index, tag_commit_index)
     while not resets_track.empty():
         step_commit = resets_track.get()
-        commit_file = os.path.join(path, "repository", "objects", step_commit + ".dat")
+        commit_file = os.path.join(repo.objects, step_commit + ".dat")
         deltas_info = {}
         with open(commit_file, 'rb') as commit:
             deltas_info = pickle.load(commit)
@@ -243,13 +246,11 @@ def reset(path, tag):
             with open(file, 'w') as f:
                 f.writelines(reset_lines)
 
-    branches_file = os.path.join(path, "repository", "branches.dat")
     new_head_commit = CommitInfo()
-    commits_file = os.path.join(path, "repository", "commits.dat")
-    with open(commits_file, 'rb') as f:
+    with open(repo.commits, 'rb') as f:
         commit_dict = pickle.load(f)
         new_head_commit = commit_dict[tag_commit_index]
-    set_head_commit(head_record, branches_file, new_head_commit)
+    set_head_commit(repo.head, repo.branches, new_head_commit)
     print('Resetting finished.')
 
 
@@ -284,6 +285,41 @@ def is_last_commit_relevant(path):
            len(dir_comparer.deleted) == 0
 
 
+def status(path):
+    repo = RepositoryInfo(path)
+    repo.check_repository()
+    dir_comparer = DirContentComparer(path)
+    dir_comparer.compare()
+    no_changes = len(dir_comparer.added) == 0 and \
+                 len(dir_comparer.changed) == 0 and \
+                 len(dir_comparer.deleted) == 0
+    if no_changes:
+        if os.path.getsize(repo.index) == 0:
+            print("Current state of folder is saved.\nNothing to add, nothing to commit.")
+        else:
+            print("All tracked changes are added, commit them.")
+    else:
+        status_console_log(path, dir_comparer)
+
+
+def branch(path):
+    head_record = os.path.join(path, "repository", "head.txt")
+    head_index = ''
+    with open(head_record, 'r') as f:
+        head_index = f.read()
+
+    branches_file = os.path.join(path, "repository", "branches.dat")
+    current_branch = ''
+    print("Branches:")
+    with open(branches_file, 'rb') as branches:
+        branches_dict = pickle.load(branches)
+        for branch in branches_dict:
+            print(" ", branch)
+            if branches_dict[branch].commit_index == head_index:
+                current_branch = branch
+    print("Current branch:", current_branch)
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("command", help="CVS command")
@@ -297,7 +333,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    if not does_dir_exist(args.path):
+    if not RepositoryInfo.does_dir_exist(args.path):
         sys.exit("Given directory does not exist")
     if args.command == "init":
         init(args.path)
@@ -307,6 +343,10 @@ def main():
         commit(args.path, args.tag, args.comment)
     if args.command == "reset":
         reset(args.path, args.tag)
+    if args.command == "status":
+        status(args.path)
+    if args.command == "branch":
+        branch(args.path)
 
 
 if __name__ == '__main__':
