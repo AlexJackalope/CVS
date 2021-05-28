@@ -7,13 +7,12 @@ class CommitInfo:
 
     def set_init_commit(self, commit):
         self.branch = 'main'
-        self.prev_commit = None
-        self.commit = str(commit)
+        self.commit = commit
 
     def set_next_commit_on_branch(self, prev_info, commit):
         self.branch = prev_info.branch
         self.prev_commit = prev_info.commit
-        self.commit = str(commit)
+        self.commit = commit
         prev_info.next_on_branch = self.commit
 
     def set_new_branch(self, branch):

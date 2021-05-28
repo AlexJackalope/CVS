@@ -123,7 +123,7 @@ def commit(path, tag=None, comment=None):
         repo.add_tag(tag, commit_index)
     repo.add_commit_info(current_commit)
     repo.rewrite_head(commit_index)
-    repo.rewrite_branch_head(commit_index)
+    repo.rewrite_branch_head(current_commit)
 
     log_commit(repo, commit_index, tag, comment)
     if tag is not None:
@@ -141,7 +141,7 @@ def log_commit(repo, commit, tag, comment):
         if comment is not None:
             logs.write("Comment:", comment)
         logs.write(commit)
-        logs.write()
+        logs.write('\n')
 
 
 def reset(path, tag):
@@ -231,30 +231,24 @@ def status(path):
 
 def branch(path, branch_name=None):
     repo = RepositoryInfo(path)
+    repo.check_repository()
     if branch_name is None:
         log_branches(repo)
     else:
-        make_branch(repo, branch)
+        repo.add_branch(branch_name)
+        print('Branch added')
 
 
 def log_branches(repo):
-    head_index = ''
-    with open(repo._head_file, 'r') as f:
-        head_index = f.read()
-
     current_branch = ''
     print("Branches:")
     with open(repo.branches, 'rb') as branches:
         branches_dict = pickle.load(branches)
         for branch in branches_dict:
             print("\t"+branch)
-            if branches_dict[branch].commit_index == head_index:
+            if branches_dict[branch] == repo.head:
                 current_branch = branch
     print("Current branch:", current_branch)
-
-
-def make_branch(repo, branch):
-    pass
 
 
 def parse_args():

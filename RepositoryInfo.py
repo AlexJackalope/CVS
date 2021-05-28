@@ -78,12 +78,28 @@ class RepositoryInfo:
         with open(self._head_file, 'w') as head:
             head.write(commit)
 
-    def rewrite_branch_head(self, commit):
+    def rewrite_branch_head(self, commit_info):
         branches_dict = {}
-        if self.prev_commit is not None:
-            with open(self.branches, 'rb') as branches:
+        with open(self.branches, 'rb') as branches:
+            try:
                 branches_dict = pickle.load(branches)
-        branches_dict[self.branch] = commit
+            except EOFError:
+                pass
+        branches_dict[commit_info.branch] = commit_info.commit
+        with open(self.branches, 'wb') as branches:
+            pickle.dump(branches_dict, branches)
+
+    def add_branch(self, branch):
+        head_commit = self.get_head_commit_info()
+        head_commit.set_new_branch(branch)
+        self.add_commit_info(head_commit)
+        self._add_branch_to_branches(head_commit)
+
+    def _add_branch_to_branches(self, branch_commit):
+        branches_dict = {}
+        with open(self.branches, 'rb') as branches:
+            branches_dict = pickle.load(branches)
+        branches_dict[branch_commit.branch] = branch_commit.commit
         with open(self.branches, 'wb') as branches:
             pickle.dump(branches_dict, branches)
 
@@ -108,7 +124,10 @@ class RepositoryInfo:
     def add_commit_info(self, commit_info):
         commits_dict = {}
         with open(self.commits, 'rb') as commits:
-            commits_dict = pickle.load(commits)
+            try:
+                commits_dict = pickle.load(commits)
+            except EOFError:
+                pass
         commits_dict[commit_info.commit] = commit_info
         with open(self.commits, 'wb') as commits:
             pickle.dump(commits_dict, commits)
