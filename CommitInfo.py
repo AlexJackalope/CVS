@@ -16,9 +16,17 @@ class CommitInfo:
         prev_info.next_on_branch = self.commit
 
     def set_new_branch(self, branch):
-        self.branches_next[self.branch] = self.next_on_branch
+        next_on_branch = self.next_on_branch
+        cur_branch = self.branch
+        self.branches_next[cur_branch] = next_on_branch
         self.branch = branch
         self.next_on_branch = None
+
+    def all_commit_branches(self):
+        branches = [self.branch]
+        for branch in self.branches_next:
+            branches.append(branch)
+        return branches
 
     def get_next_commit_on_branch(self, branch):
         if self.branch == branch:
@@ -26,3 +34,11 @@ class CommitInfo:
         if branch in self.branches_next:
             return self.branches_next[branch]
         return None
+
+    def get_all_next_commits(self):
+        next = []
+        if self.next_on_branch is not None:
+            next.append(self.next_on_branch)
+        for commit in self.branches_next.values():
+            next.append(commit)
+        return next

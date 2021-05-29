@@ -42,7 +42,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/CVS.py" />
-      <option name="PARAMETERS" value="switch C:\Users\alexa\ForCVS -t=&quot;last&quot;" />
+      <option name="PARAMETERS" value="branch C:\Users\alexa\ForCVS -b=&quot;b&quot;" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -113,38 +113,38 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/CVS.py</url>
-          <line>316</line>
-          <option name="timeStamp" value="51" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/CVS.py</url>
-          <line>110</line>
-          <option name="timeStamp" value="58" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/CVS.py</url>
           <line>194</line>
           <option name="timeStamp" value="59" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/CVS.py</url>
-          <line>327</line>
-          <option name="timeStamp" value="64" />
+          <line>330</line>
+          <option name="timeStamp" value="71" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/CVS.py</url>
-          <line>354</line>
-          <option name="timeStamp" value="68" />
+          <line>475</line>
+          <option name="timeStamp" value="72" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/CVS.py</url>
-          <line>333</line>
-          <option name="timeStamp" value="69" />
+          <line>480</line>
+          <option name="timeStamp" value="74" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/CVS.py</url>
-          <line>337</line>
-          <option name="timeStamp" value="70" />
+          <url>file://$PROJECT_DIR$/RepositoryInfo.py</url>
+          <line>106</line>
+          <option name="timeStamp" value="75" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
+          <line>20</line>
+          <option name="timeStamp" value="76" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/RepositoryInfo.py</url>
+          <line>148</line>
+          <option name="timeStamp" value="77" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

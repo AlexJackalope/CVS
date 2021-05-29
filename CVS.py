@@ -306,18 +306,20 @@ def is_last_state_relevant(path, dir_comparer=None):
 def switch(path, tag=None, steps_back=None, steps_forward=None):
     repo = RepositoryInfo(path)
     checks_before_switching(path, repo)
+    switching_track = queue.Queue()
     new_head = None
     if tag is None:
-        switching_track = queue.Queue()
+        is_back = True
         if steps_back is not None:
             get_switch_back_track_by_steps(repo, switching_track, repo.head, int(steps_back))
-            new_head = go_through_commits_return_current(path, repo, switching_track, True)
+
         elif steps_forward is not None:
             branch = repo.get_head_commit_info().branch
             get_switch_forward_track_by_steps(repo, switching_track, repo.head, branch, int(steps_forward))
-            new_head = go_through_commits_return_current(path, repo, switching_track, False)
+            is_back = False
         else:
             sys.exit("Put a tag or an amount of steps to switch")
+        new_head = go_through_commits_return_current(path, repo, switching_track, is_back)
     else:
         tagged_commit = repo.get_tag_commit(tag)
         if tagged_commit is None:
@@ -325,23 +327,28 @@ def switch(path, tag=None, steps_back=None, steps_forward=None):
 
         tagged_info = repo.get_commit_info(tagged_commit)
         head_info = repo.get_head_commit_info()
-        if tagged_info.branch == head_info.branch:
-            track, is_back = get_path_and_head_on_branch(repo,
-                                                         head_info.branch,
-                                                         head_info.commit,
-                                                         tagged_info)
-            new_head = go_through_commits_return_current(path, repo, track, is_back)
+
+        if head_info.branch in tagged_info.all_commit_branches():
+            switching_track, is_back = get_path_on_branch(repo,
+                                                          head_info.branch,
+                                                          head_info.commit,
+                                                          tagged_info)
+            new_head = go_through_commits_return_current(path, repo, switching_track, is_back)
+        else:
+            paths = get_paths_through_branches(repo, head_info.commit, tagged_info)
+            for path_pair in paths:
+                path = path_pair[0]
+                is_back = path_pair[1]
+                new_head = go_through_commits_return_current(path, repo, switching_track, is_back)
     repo.rewrite_head(new_head)
-    head_info = repo.get_commit_info(new_head)
-    repo.rewrite_branch_head(head_info)
     update_last_state(path, repo)
     print('Switching finished.')
 
 
-def get_path_and_head_on_branch(repo, branch, start_commit, finish_commit_info):
+def get_path_on_branch(repo, branch, start_commit, finish_commit_info):
     """
     Возвращает две переменных: путь-очередь коммитов
-    и флаг движения изменений назад по истории
+    и флаг движения изменений назад по истории.
     """
     commits_to_check = queue.Queue()
     finish = CommitInfo()
@@ -364,6 +371,57 @@ def get_path_and_head_on_branch(repo, branch, start_commit, finish_commit_info):
                 commits_to_check.put(back)
 
 
+class PathStep:
+    def __init__(self, prev_step, commit, moving_back=None):
+        self.prev_step = prev_step
+        self.commit = commit
+        self.is_back = moving_back
+
+
+def get_paths_through_branches(repo, start_commit, finish_commit_info):
+    """
+    Возвращает список пар:
+    1. Путь от коммита до коммита между разветвлениями;
+    2. Флаг движения назад по истории.
+    """
+    commits_to_check = queue.Queue()
+    finish_step = PathStep(None, finish_commit_info.commit)
+    add_nearest_commits_to_queue(commits_to_check, finish_step, finish_commit_info)
+    while not commits_to_check.empty():
+        checking = commits_to_check.get()
+        if checking.commit == start_commit:
+            return get_paths_by_link(checking)
+        checking_info = repo.get_commit_info(checking.commit)
+        add_nearest_commits_to_queue(commits_to_check, checking, checking_info)
+
+
+def add_nearest_commits_to_queue(queue, step, commit_info):
+    back_step = PathStep(step, commit_info.prev_commit, True)
+    queue.put(back_step)
+    for next_commit in commit_info.get_all_next_commits():
+        if next_step != step.commit:
+            next_step = PathStep(step, next_commit, False)
+            queue.put(next)
+
+
+def get_paths_by_link(path_step):
+    """
+    По односвязному списку шагов возвращает список путей с соответствующим им направлениям.
+    """
+    paths = []
+    path_queue = queue.Queue()
+    is_back = path_step.is_back
+    while path_step is not None:
+        if path_step.is_back != is_back:
+            paths.append([path_queue, is_back])
+            path_queue = queue.Queue()
+            is_back = path_step.is_back
+        path_queue.put(path_step.commit)
+        path_step = path_step.prev_step
+    paths.append([path_queue, is_back])
+    return paths
+
+
 def prev_on_branch(prev_commit, current):
     prev = CommitInfo()
     prev.commit = prev_commit
@@ -379,6 +437,10 @@ def next_on_branch(next_commit, current):
 
 
 def get_commits_track_and_head_by_linked(commit_info):
+    """
+    По односвязному списку от элемента commit_info
+    возвращает очередь-путь и направление движения по истории коммитов.
+    """
     track = queue.Queue()
     is_back = True
     if commit_info.next_on_branch is None:

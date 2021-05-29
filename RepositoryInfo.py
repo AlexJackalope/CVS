@@ -7,6 +7,7 @@ class TagPair:
         self.tag = tag
         self.commit = commit
 
+
 class Deltas:
     def __init__(self, added, changed, deleted):
         self.added = added
@@ -145,3 +146,10 @@ class RepositoryInfo:
         commits_dict[commit_info.commit] = commit_info
         with open(self.commits, 'wb') as commits:
             pickle.dump(commits_dict, commits)
+        dict = None
+        with open(self.commits, 'rb') as commits:
+            try:
+                dict = pickle.load(commits)
+            except EOFError:
+                pass
+        a = 0
