@@ -19,3 +19,10 @@ class CommitInfo:
         self.branches_next[self.branch] = self.next_on_branch
         self.branch = branch
         self.next_on_branch = None
+
+    def get_next_commit_on_branch(self, branch):
+        if self.branch == branch:
+            return self.next_on_branch
+        if branch in self.branches_next:
+            return self.branches_next[branch]
+        return None

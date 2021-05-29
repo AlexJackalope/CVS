@@ -144,7 +144,7 @@ def reset(path, tag=None, steps_back=None):
         tag_commit = repo.get_tag_commit(tag)
         get_resets_track_by_tag(repo, resets_track, repo.head, tag_commit)
     elif steps_back is not None:
-        get_resets_back_track_by_steps(repo, resets_track, repo.head, int(steps_back))
+        get_switch_back_track_by_steps(repo, resets_track, repo.head, int(steps_back))
     else:
         sys.exit("Put a tag or an amount of steps to reset")
 
@@ -269,24 +269,28 @@ def get_resets_track_by_tag(repo, track, current, final):
     get_resets_track_by_tag(repo, track, prev_commit, final)
 
 
-def get_resets_back_track_by_steps(repo, track, current, steps):
+def get_switch_back_track_by_steps(repo, track, current, steps):
     if steps == 0:
         return
     if steps > 0 and current is None:
         sys.exit("You put a greater number than the commits amount.\nRollback is impossible.")
     track.put(current)
     prev_commit = repo.get_commit_info(current).prev_commit
-    get_resets_back_track_by_steps(repo, track, prev_commit, steps - 1)
+    get_switch_back_track_by_steps(repo, track, prev_commit, steps - 1)
 
 
-def get_resets_forward_track_by_steps(repo, track, current, steps):
+def get_switch_forward_track_by_steps(repo, track, current, branch, steps):
     if steps == 0:
         return
-    next_commit = repo.get_commit_info(current).next_on_branch
+    commit_info = repo.get_commit_info(current)
+    if commit_info.branch == branch:
+        next_commit = commit_info.next_on_branch
+    else:
+        next_commit = commit_info.branches_next[branch]
     if steps > 0 and next_commit is None:
         sys.exit("You put a greater number than the commits amount.\nSwitching is impossible.")
     track.put(next_commit)
-    get_resets_forward_track_by_steps(repo, track, next_commit, steps - 1)
+    get_switch_forward_track_by_steps(repo, track, next_commit, branch, steps - 1)
 
 
 def is_last_state_relevant(path, dir_comparer=None):
@@ -302,24 +306,88 @@ def is_last_state_relevant(path, dir_comparer=None):
 def switch(path, tag=None, steps_back=None, steps_forward=None):
     repo = RepositoryInfo(path)
     checks_before_switching(path, repo)
-    switching_track = queue.Queue()
+    new_head = None
     if tag is None:
-        head = None
+        switching_track = queue.Queue()
         if steps_back is not None:
-            get_resets_back_track_by_steps(repo, switching_track, repo.head, int(steps_back))
-            head = go_through_commits_return_current(path, repo, switching_track, True)
+            get_switch_back_track_by_steps(repo, switching_track, repo.head, int(steps_back))
+            new_head = go_through_commits_return_current(path, repo, switching_track, True)
         elif steps_forward is not None:
-            get_resets_forward_track_by_steps(repo, switching_track, repo.head, int(steps_forward))
-            head = go_through_commits_return_current(path, repo, switching_track, False)
+            branch = repo.get_head_commit_info().branch
+            get_switch_forward_track_by_steps(repo, switching_track, repo.head, branch, int(steps_forward))
+            new_head = go_through_commits_return_current(path, repo, switching_track, False)
         else:
             sys.exit("Put a tag or an amount of steps to switch")
-        repo.rewrite_head(head)
-        head_info = repo.get_commit_info(head)
-        repo.rewrite_branch_head(head_info)
-        update_last_state(path, repo)
-        print('Switching finished.')
     else:
-        pass
+        tagged_commit = repo.get_tag_commit(tag)
+        if tagged_commit is None:
+            sys.exit("Commit with this tag does not exist")
+
+        tagged_info = repo.get_commit_info(tagged_commit)
+        head_info = repo.get_head_commit_info()
+        if tagged_info.branch == head_info.branch:
+            track, is_back = get_path_and_head_on_branch(head_info.branch,
+                                                                   head_info.commit,
+                                                                   tagged_info)
+            new_head = go_through_commits_return_current(path, repo, track, is_back)
+    repo.rewrite_head(new_head)
+    head_info = repo.get_commit_info(new_head)
+    repo.rewrite_branch_head(head_info)
+    update_last_state(path, repo)
+    print('Switching finished.')
+
+
+def get_path_and_head_on_branch(branch, start_commit, finish_commit_info):
+    """
+    Возвращает две переменных: путь-очередь коммитов
+    и флаг движения изменений назад по истории
+    """
+    commits_to_check = queue.Queue()
+    back = prev_on_branch(finish_commit_info)
+    next = next_on_branch(finish_commit_info, branch)
+    commits_to_check.put(back)
+    commits_to_check.put(next)
+    while not commits_to_check.empty():
+        checking = commits_to_check.get()
+        if checking.commit == start_commit:
+            return get_commits_track_and_head_by_linked(checking)
+        if checking.next_on_branch is None:
+            next = next_on_branch(checking)
+            commits_to_check.put(next)
+        else:
+            back = prev_on_branch(checking)
+            commits_to_check.put(back)
+
+
+def prev_on_branch(commit):
+    prev = CommitInfo()
+    prev.commit = commit.prev_commit
+    prev.next_on_branch = commit
+    return prev
+
+
+def next_on_branch(commit, branch):
+    next = CommitInfo()
+    next.commit = commit.get_next_commit_on_branch(branch)
+    next.prev_commit = commit
+    return next
+
+
+def get_commits_track_and_head_by_linked(commit_info):
+    track = queue.Queue()
+    is_back = True
+    if commit_info.next_on_branch is None:
+        while commit_info.prev_commit is not None:
+            track.put(commit_info.commit)
+            commit_info = commit_info.prev_commit
+    else:
+        is_back = False
+        commit_info = commit_info.next_on_branch
+        while commit_info.next_on_branch is not None:
+            track.put(commit_info.commit)
+            commit_info = commit_info.next_on_branch
+        track.put(commit_info.commit)
+    return track, is_back
 
 
 def status(path):
