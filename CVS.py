@@ -130,7 +130,7 @@ def log_commit(repo, commit, tag, comment):
         logs.write('\n')
 
 
-def reset(path, tag):
+def reset(path, tag=None, steps_back=None):
     repo = RepositoryInfo(path)
     repo.check_repository()
     print("Repository is OK, start checking last commit.")
@@ -140,9 +140,12 @@ def reset(path, tag):
         sys.exit("Your folder has uncommitted changes, commit before restoring.")
     print("Last commit is relevant, start resetting.")
     print()
-    tag_commit = repo.get_tag_commit(tag)
     resets_track = queue.Queue()
-    get_resets_track(repo, resets_track, repo.head, tag_commit)
+    if tag is not None:
+        tag_commit = repo.get_tag_commit(tag)
+        get_resets_track_by_tag(repo, resets_track, repo.head, tag_commit)
+    elif steps_back is not None:
+        pass
 
     while not resets_track.empty():
         step_commit = resets_track.get()
@@ -190,10 +193,9 @@ def delete_files(path, to_delete):
             os.remove(absolute_file)
 
 
-def go_to_previous_state(path, deltas):
-    delete_files(path, deltas.added)
-    for file in deltas.deleted:
-        content = deltas.deleted[file]
+def add_files(path, file_to_content):
+    for file in file_to_content:
+        content = file_to_content[file]
         absolute_file = os.path.join(path, file)
         file_dir_path = os.path.dirname(absolute_file)
         if not os.path.exists(file_dir_path):
@@ -201,22 +203,39 @@ def go_to_previous_state(path, deltas):
         Path(absolute_file).touch()
         with open(absolute_file, 'w') as f:
             f.writelines(content)
+
+
+def go_to_previous_state(path, deltas):
+    delete_files(path, deltas.added.keys())
+    add_files(path, deltas.deleted)
     for file in deltas.changed:
         file_lines = ''
         with open(file, 'r') as f:
             file_lines = f.readlines()
-        reset_lines = FilesComparer().previous_file_version(file_lines,
+        prev_lines = FilesComparer().previous_file_version(file_lines,
                                                             deltas.changed[file])
         with open(file, 'w') as f:
-            f.writelines(reset_lines)
+            f.writelines(prev_lines)
 
 
-def get_resets_track(repo, track, current, final):
+def go_to_next_state(path, deltas):
+    delete_files(path, deltas.deleted.keys())
+    add_files(path, deltas.added)
+    for file in deltas.changed:
+        file_lines = ''
+        with open(file, 'r') as f:
+            file_lines = f.readlines()
+        next_lines = FilesComparer().next_file_version(file_lines, deltas.changed[file])
+        with open(file, 'w') as f:
+            f.writelines(next_lines)
+
+
+def get_resets_track_by_tag(repo, track, current, final):
     if current == final:
         return
     track.put(current)
     prev_commit = repo.get_commit_info(current).prev_commit
-    get_resets_track(repo, track, prev_commit, final)
+    get_resets_track_by_tag(repo, track, prev_commit, final)
 
 
 def is_last_state_relevant(path, dir_comparer=None):
@@ -267,7 +286,7 @@ def log_branches(repo):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", help="CVS command")
+    parser.add_argument("command", nargs='+', help="CVS command")
     parser.add_argument("path", help="path to a folder with repository")
     parser.add_argument("files", nargs='*',
                         help="bunch of files to add (only for 'add' command)")
@@ -281,17 +300,20 @@ def main():
     args = parse_args()
     if not RepositoryInfo.does_dir_exist(args.path):
         sys.exit("Given directory does not exist")
-    if args.command == "init":
+    if args.command[0] == "init":
         init(args.path)
-    if args.command == "add":
+    if args.command[0] == "add":
         add(args.path, args.files)
-    if args.command == "commit":
+    if args.command[0] == "commit":
         commit(args.path, args.tag, args.comment)
-    if args.command == "reset":
-        reset(args.path, args.tag)
-    if args.command == "status":
+    if args.command[0] == "reset":
+        if len(args.command) == 2:
+            reset(args.path, steps_back=args.command[1])
+        else:
+            reset(args.path, tag=args.tag)
+    if args.command[0] == "status":
         status(args.path)
-    if args.command == "branch":
+    if args.command[0] == "branch":
         branch(args.path, args.branchname)
 
 
