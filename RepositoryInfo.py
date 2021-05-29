@@ -7,6 +7,12 @@ class TagPair:
         self.tag = tag
         self.commit = commit
 
+class Deltas:
+    def __init__(self, added, changed, deleted):
+        self.added = added
+        self.changed = changed
+        self.deleted = deleted
+
 
 class RepositoryInfo:
     def __init__(self, path):

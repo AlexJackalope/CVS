@@ -6,7 +6,7 @@ import shutil
 import queue
 from Comparers import DirContentComparer, FilesComparer
 from CommitInfo import CommitInfo
-from RepositoryInfo import RepositoryInfo
+from RepositoryInfo import RepositoryInfo, Deltas
 
 
 def is_dir_empty(path):
@@ -30,44 +30,28 @@ def add(path, files_to_add):
     repo.check_repository()
     print("Repository is OK, start comparing.")
     print()
+
     dir_comparer = DirContentComparer(path)
     dir_comparer.compare(files_to_add)
+    if is_last_state_relevant(path, dir_comparer):
+        print("Adding finished, no changes")
+        return
+
     status_console_log(path, dir_comparer)
     filesToCompare = [[os.path.join(repo.last_state, x),
                        os.path.join(path, x)] for x in dir_comparer.changed]
     files_comparer = FilesComparer(filesToCompare)
+
     diffs = files_comparer.compareFiles()
-    deleted = deleted_content(path, dir_comparer.deleted)
-    info = {"Added": dir_comparer.added, "Deleted": deleted, "Changed": diffs}
-    index_file = os.path.join(path, "repository", "index.dat")
-    with open(index_file, 'ab') as dump_out:
-        pickle.dump(info, dump_out)
+    deleted = file_to_content(repo.last_state, dir_comparer.deleted)
+    added = file_to_content(path, dir_comparer.added)
+    info = Deltas(added, diffs, deleted)
+
+    with open(repo.index, 'ab') as index:
+        pickle.dump(info, index)
     update_last_state(path, dir_comparer)
     print()
     print("Adding finished")
-
-
-def update_last_state(path, comparer):
-    repo_path = os.path.join(path, "repository", "last_state")
-    for file in comparer.deleted:
-        to_delete = os.path.join(repo_path, file)
-        os.chmod(to_delete, 0o777)
-        if os.path.isdir(to_delete):
-            shutil.rmtree(to_delete)
-        else:
-            os.remove(to_delete)
-    for file in comparer.added:
-        to_add = os.path.join(path, file)
-        copy_path = os.path.join(repo_path, file)
-        copy_dir_path = os.path.dirname(copy_path)
-        if not os.path.exists(copy_dir_path):
-            os.makedirs(copy_dir_path)
-        Path(copy_path).touch()
-        shutil.copyfile(to_add, copy_path)
-    for file in comparer.changed:
-        changed = os.path.join(path, file)
-        copy_path = os.path.join(repo_path, file)
-        shutil.copyfile(changed, copy_path)
 
 
 def status_console_log(path, comparer):
@@ -87,12 +71,12 @@ def log_paths(path, to_log):
             print("\t" + file)
 
 
-def deleted_content(path, deleted_files):
+def file_to_content(path, deleted_files):
     file_to_content = {}
     for file in deleted_files:
-        deleted = os.path.join(path, "repository", "last_state", file)
-        os.chmod(deleted, 0o777)
-        with open(deleted, 'r') as f:
+        abs_path = os.path.join(path, file)
+        os.chmod(abs_path, 0o777)
+        with open(abs_path, 'r') as f:
             file_to_content[file] = f.readlines()
     return file_to_content
 
@@ -100,6 +84,8 @@ def deleted_content(path, deleted_files):
 def commit(path, tag=None, comment=None):
     repo = RepositoryInfo(path)
     repo.check_repository()
+    if os.path.getsize(repo.index) == 0:
+        sys.exit("Nothing to commit")
     print("Repository is OK, start committing.")
     print()
 
@@ -137,9 +123,9 @@ def log_commit(repo, commit, tag, comment):
     with open(repo.logs, 'a') as logs:
         logs.write("Commit")
         if tag is not None:
-            logs.write("Tag:", tag)
+            logs.write("Tag: " + tag)
         if comment is not None:
-            logs.write("Comment:", comment)
+            logs.write("Comment: " + comment)
         logs.write(commit)
         logs.write('\n')
 
@@ -149,7 +135,7 @@ def reset(path, tag):
     repo.check_repository()
     print("Repository is OK, start checking last commit.")
     print()
-    relevant = is_last_commit_relevant(path)
+    relevant = is_last_state_relevant(path)
     if not relevant:
         sys.exit("Your folder has uncommitted changes, commit before restoring.")
     print("Last commit is relevant, start resetting.")
@@ -157,36 +143,18 @@ def reset(path, tag):
     tag_commit = repo.get_tag_commit(tag)
     resets_track = queue.Queue()
     get_resets_track(repo, resets_track, repo.head, tag_commit)
+
     while not resets_track.empty():
         step_commit = resets_track.get()
         commit_file = os.path.join(repo.objects, step_commit + ".dat")
         deltas_info = {}
         with open(commit_file, 'rb') as commit:
-            deltas_info = pickle.load(commit)
-        for added_file in deltas_info["Added"]:
-            absolute_file = os.path.join(path, added_file)
-            os.chmod(absolute_file, 0o777)
-            if os.path.isdir(absolute_file):
-                shutil.rmtree(absolute_file)
-            else:
-                os.remove(absolute_file)
-        for file in deltas_info["Deleted"]:
-            content = deltas_info["Deleted"][file]
-            absolute_file = os.path.join(path, file)
-            file_dir_path = os.path.dirname(absolute_file)
-            if not os.path.exists(file_dir_path):
-                os.makedirs(file_dir_path)
-            Path(absolute_file).touch()
-            with open(absolute_file, 'w') as f:
-                f.writelines(content)
-        for file in deltas_info["Changed"]:
-            file_lines = ''
-            with open(file, 'r') as f:
-                file_lines = f.readlines()
-            reset_lines = FilesComparer().previous_file_version(file_lines,
-                                                                deltas_info["Changed"][file])
-            with open(file, 'w') as f:
-                f.writelines(reset_lines)
+            while True:
+                try:
+                    deltas_info = pickle.load(commit)
+                    go_to_previous_state(path, repo, deltas_info)
+                except EOFError:
+                    pass
 
     new_head_commit = CommitInfo()
     with open(repo.commits, 'rb') as f:
@@ -197,6 +165,54 @@ def reset(path, tag):
     print('Resetting finished.')
 
 
+def update_last_state(path, comparer):
+    repo_path = os.path.join(path, "repository", "last_state")
+    delete_files(path, comparer.deleted)
+    for file in comparer.added:
+        to_add = os.path.join(path, file)
+        copy_path = os.path.join(repo_path, file)
+        copy_dir_path = os.path.dirname(copy_path)
+        if not os.path.exists(copy_dir_path):
+            os.makedirs(copy_dir_path)
+        Path(copy_path).touch()
+        shutil.copyfile(to_add, copy_path)
+    for file in comparer.changed:
+        changed = os.path.join(path, file)
+        copy_path = os.path.join(repo_path, file)
+        shutil.copyfile(changed, copy_path)
+
+
+def delete_files(path, to_delete):
+    for file in to_delete:
+        absolute_file = os.path.join(path, file)
+        os.chmod(absolute_file, 0o777)
+        if os.path.isdir(absolute_file):
+            shutil.rmtree(absolute_file)
+        else:
+            os.remove(absolute_file)
+
+
+def go_to_previous_state(path, deltas):
+    delete_files(path, deltas.added)
+    for file in deltas.deleted:
+        content = deltas.deleted[file]
+        absolute_file = os.path.join(path, file)
+        file_dir_path = os.path.dirname(absolute_file)
+        if not os.path.exists(file_dir_path):
+            os.makedirs(file_dir_path)
+        Path(absolute_file).touch()
+        with open(absolute_file, 'w') as f:
+            f.writelines(content)
+    for file in deltas.changed:
+        file_lines = ''
+        with open(file, 'r') as f:
+            file_lines = f.readlines()
+        reset_lines = FilesComparer().previous_file_version(file_lines,
+                                                            deltas.changed[file])
+        with open(file, 'w') as f:
+            f.writelines(reset_lines)
+
+
 def get_resets_track(repo, track, current, final):
     if current == final:
         return
@@ -205,8 +221,10 @@ def get_resets_track(repo, track, current, final):
     get_resets_track(repo, track, prev_commit, final)
 
 
-def is_last_commit_relevant(path):
-    dir_comparer = DirContentComparer(path)
+def is_last_state_relevant(path, dir_comparer=None):
+    if dir_comparer is None:
+        dir_comparer = DirContentComparer(path)
+        dir_comparer.compare()
     return len(dir_comparer.added) == 0 and \
            len(dir_comparer.changed) == 0 and \
            len(dir_comparer.deleted) == 0
@@ -217,9 +235,7 @@ def status(path):
     repo.check_repository()
     dir_comparer = DirContentComparer(path)
     dir_comparer.compare()
-    no_changes = len(dir_comparer.added) == 0 and \
-                 len(dir_comparer.changed) == 0 and \
-                 len(dir_comparer.deleted) == 0
+    no_changes = is_last_state_relevant(path, dir_comparer)
     if no_changes:
         if os.path.getsize(repo.index) == 0:
             print("Current state of folder is saved.\nNothing to add, nothing to commit.")
