@@ -72,6 +72,7 @@ def log_paths(path, to_log):
 
 
 def file_to_content(path, deleted_files):
+    """Возвращает словарь относительный путь к файлу - содержимое в виде массива строк"""
     file_to_content = {}
     for file in deleted_files:
         abs_path = os.path.join(path, file)
@@ -156,6 +157,7 @@ def reset(path, tag=None, steps_back=None):
 
 
 def checks_before_switching(path, repo):
+    """Проверки на целостность репозитория и актуальность последнего коммита"""
     repo.check_repository()
     print("Repository is OK, start checking last commit.")
     print()
@@ -168,6 +170,7 @@ def checks_before_switching(path, repo):
 
 
 def go_through_commits_return_current(path, repo, commits_track, is_back):
+    """Переход состояния папки вперёд или назад по истории коммитов внутри ветки"""
     step_commit = None
     while not commits_track.empty():
         step_commit = commits_track.get()
@@ -190,6 +193,7 @@ def go_through_commits_return_current(path, repo, commits_track, is_back):
 
 
 def update_last_state(path, repo):
+    """Копирование состояния основной папки в last_state"""
     comparer = DirContentComparer(path)
     comparer.compare()
     delete_files(repo.last_state, comparer.deleted)
@@ -218,6 +222,7 @@ def delete_files(path, to_delete):
 
 
 def add_files(path, file_to_content):
+    """Добавление файлов в папку и их заполнение соответствующим содержимым"""
     for file in file_to_content:
         content = file_to_content[file]
         absolute_file = os.path.join(path, file)
@@ -230,6 +235,7 @@ def add_files(path, file_to_content):
 
 
 def go_to_previous_state(path, deltas):
+    """Откат состояния папки на один коммит назад"""
     delete_files(path, deltas.added.keys())
     add_files(path, deltas.deleted)
     for file in deltas.changed:
@@ -243,6 +249,7 @@ def go_to_previous_state(path, deltas):
 
 
 def go_to_next_state(path, deltas):
+    """Переход состояния папки на один коммит вперёд"""
     delete_files(path, deltas.deleted.keys())
     add_files(path, deltas.added)
     for file in deltas.changed:
@@ -283,6 +290,7 @@ def get_resets_forward_track_by_steps(repo, track, current, steps):
 
 
 def is_last_state_relevant(path, dir_comparer=None):
+    """Проверка совпадения состояния основной папки и last_state"""
     if dir_comparer is None:
         dir_comparer = DirContentComparer(path)
         dir_comparer.compare()

@@ -37,12 +37,14 @@ class RepositoryInfo:
 
     @property
     def head(self):
+        """Имя головного коммита"""
         head = ''
         with open(self._head_file, 'r') as f:
             head = f.read()
         return head
 
     def check_repository(self):
+        """Проверка существования служебных файлов репозитория"""
         repository = os.path.join(self.path, "repository")
         if not self.does_dir_exist(repository):
             sys.exit("Repository is not initialized, "
@@ -56,6 +58,7 @@ class RepositoryInfo:
                 sys.exit("Repository is damaged.")
 
     def is_tag_in_repo_tree(self, tag):
+        """Проверка существования тэга"""
         with open(self.tags, 'rb') as tags:
             while True:
                 try:
@@ -66,6 +69,7 @@ class RepositoryInfo:
                     return False
 
     def get_tag_commit(self, tag):
+        """Имя коммита по тэгу, None, если тэга не существует"""
         with open(self.tags, 'rb') as tags:
             while True:
                 try:
@@ -81,10 +85,12 @@ class RepositoryInfo:
             pickle.dump(tag_pair, tags)
 
     def rewrite_head(self, commit):
+        """Установка головного коммита"""
         with open(self._head_file, 'w') as head:
             head.write(commit)
 
     def rewrite_branch_head(self, commit_info):
+        """Установка головного коммита ветки"""
         branches_dict = {}
         with open(self.branches, 'rb') as branches:
             try:
@@ -114,6 +120,7 @@ class RepositoryInfo:
             pass
 
     def get_commit_info(self, commit):
+        """Информация о коммите по его имени"""
         commit_info = None
         with open(self.commits, 'rb') as commits:
             commits_dict = pickle.load(commits)
@@ -128,6 +135,7 @@ class RepositoryInfo:
             return None
 
     def add_commit_info(self, commit_info):
+        """Обновление информации о коммите"""
         commits_dict = {}
         with open(self.commits, 'rb') as commits:
             try:
