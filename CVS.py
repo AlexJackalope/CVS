@@ -49,7 +49,7 @@ def add(path, files_to_add):
 
     with open(repo.index, 'ab') as index:
         pickle.dump(info, index)
-    update_last_state(path, repo, dir_comparer)
+    update_last_state(path, repo)
     print()
     print("Adding finished")
 
@@ -107,6 +107,7 @@ def commit(path, tag=None, comment=None):
         current_commit.set_init_commit(commit_index)
     else:
         current_commit.set_next_commit_on_branch(previous_commit, commit_index)
+        repo.add_commit_info(previous_commit)
 
     if tag is not None:
         repo.add_tag(tag, commit_index)
@@ -142,7 +143,7 @@ def reset(path, tag=None, steps_back=None):
         tag_commit = repo.get_tag_commit(tag)
         get_resets_track_by_tag(repo, resets_track, repo.head, tag_commit)
     elif steps_back is not None:
-        get_resets_track_by_steps(repo, resets_track, repo.head, int(steps_back), True)
+        get_resets_back_track_by_steps(repo, resets_track, repo.head, int(steps_back))
     else:
         sys.exit("Put a tag or an amount of steps to reset")
 
@@ -150,6 +151,7 @@ def reset(path, tag=None, steps_back=None):
     repo.rewrite_head(new_head_commit)
     head_info = repo.get_commit_info(new_head_commit)
     repo.rewrite_branch_head(head_info)
+    update_last_state(path, repo)
     print('Resetting finished.')
 
 
@@ -187,7 +189,9 @@ def go_through_commits_return_current(path, repo, commits_track, is_back):
         return step_commit
 
 
-def update_last_state(path, repo, comparer):
+def update_last_state(path, repo):
+    comparer = DirContentComparer(path)
+    comparer.compare()
     delete_files(repo.last_state, comparer.deleted)
     for file in comparer.added:
         to_add = os.path.join(path, file)
@@ -258,18 +262,24 @@ def get_resets_track_by_tag(repo, track, current, final):
     get_resets_track_by_tag(repo, track, prev_commit, final)
 
 
-def get_resets_track_by_steps(repo, track, current, steps, is_backward):
+def get_resets_back_track_by_steps(repo, track, current, steps):
     if steps == 0:
         return
     if steps > 0 and current is None:
         sys.exit("You put a greater number than the commits amount.\nRollback is impossible.")
     track.put(current)
-    if is_backward:
-        prev_commit = repo.get_commit_info(current).prev_commit
-        get_resets_track_by_steps(repo, track, prev_commit, steps - 1)
-    else:
-        next_commit = repo.get_commit_info(current).next_on_branch
-        get_resets_track_by_steps(repo, track, next_commit, steps - 1)
+    prev_commit = repo.get_commit_info(current).prev_commit
+    get_resets_back_track_by_steps(repo, track, prev_commit, steps - 1)
+
+
+def get_resets_forward_track_by_steps(repo, track, current, steps):
+    if steps == 0:
+        return
+    next_commit = repo.get_commit_info(current).next_on_branch
+    if steps > 0 and next_commit is None:
+        sys.exit("You put a greater number than the commits amount.\nSwitching is impossible.")
+    track.put(next_commit)
+    get_resets_forward_track_by_steps(repo, track, next_commit, steps - 1)
 
 
 def is_last_state_relevant(path, dir_comparer=None):
@@ -288,18 +298,19 @@ def switch(path, tag=None, steps_back=None, steps_forward=None):
     if tag is None:
         head = None
         if steps_back is not None:
-            get_resets_track_by_steps(repo, switching_track, repo.head, int(steps_back), True)
+            get_resets_back_track_by_steps(repo, switching_track, repo.head, int(steps_back))
             head = go_through_commits_return_current(path, repo, switching_track, True)
         elif steps_forward is not None:
-            get_resets_track_by_steps(repo, switching_track, repo.head, int(steps_forward), False)
+            get_resets_forward_track_by_steps(repo, switching_track, repo.head, int(steps_forward))
             head = go_through_commits_return_current(path, repo, switching_track, False)
         else:
             sys.exit("Put a tag or an amount of steps to switch")
         repo.rewrite_head(head)
         head_info = repo.get_commit_info(head)
         repo.rewrite_branch_head(head_info)
+        update_last_state(path, repo)
         print('Switching finished.')
-    elif tag is not None:
+    else:
         pass
 
 
@@ -356,18 +367,18 @@ def main():
     args = parse_args()
     if not RepositoryInfo.does_dir_exist(args.path):
         sys.exit("Given directory does not exist")
-    if args.command[0] == "init":
+    elif args.command[0] == "init":
         init(args.path)
-    if args.command[0] == "add":
+    elif args.command[0] == "add":
         add(args.path, args.files)
-    if args.command[0] == "commit":
+    elif args.command[0] == "commit":
         commit(args.path, args.tag, args.comment)
-    if args.command[0] == "reset":
+    elif args.command[0] == "reset":
         if len(args.command) == 2:
             reset(args.path, steps_back=args.command[1])
         else:
             reset(args.path, tag=args.tag)
-    if args.command[0] == "switch":
+    elif args.command[0] == "switch":
         if len(args.command) == 2:
             sign = args.command[1][0]
             if sign == '-':
@@ -376,13 +387,14 @@ def main():
                 switch(args.path, steps_forward=args.command[1][1:])
         else:
             switch(args.path, tag=args.tag)
-    if args.command[0] == "status":
+    elif args.command[0] == "status":
         status(args.path)
-    if args.command[0] == "branch":
+    elif args.command[0] == "branch":
         branch(args.path, args.branchname)
-    if args.command[0] == "checkout":
+    elif args.command[0] == "checkout":
         pass
-    sys.exit("Incorrect input. Call -h or --help to read manual.")
+    else:
+        sys.exit("Incorrect input. Call -h or --help to read manual.")
 
 
 if __name__ == '__main__':
