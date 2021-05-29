@@ -128,12 +128,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/CVS.py</url>
-          <line>146</line>
+          <line>148</line>
           <option name="timeStamp" value="45" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/CVS.py</url>
-          <line>300</line>
+          <line>321</line>
           <option name="timeStamp" value="46" />
         </line-breakpoint>
       </breakpoints>

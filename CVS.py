@@ -135,28 +135,23 @@ def reset(path, tag=None, steps_back=None):
     repo.check_repository()
     print("Repository is OK, start checking last commit.")
     print()
+
     relevant = is_last_state_relevant(path)
     if (not relevant) or os.path.getsize(repo.index) > 0:
         sys.exit("Your folder has uncommitted changes, commit before restoring.")
     print("Last commit is relevant, start resetting.")
     print()
+
     resets_track = queue.Queue()
     if tag is not None:
         tag_commit = repo.get_tag_commit(tag)
         get_resets_track_by_tag(repo, resets_track, repo.head, tag_commit)
     elif steps_back is not None:
-        pass
+        get_resets_track_by_steps(repo, resets_track, repo.head, steps_back)
+    else:
+        sys.exit("Put a tag or an amount of steps to reset")
 
-    while not resets_track.empty():
-        step_commit = resets_track.get()
-        commit_file = os.path.join(repo.objects, step_commit + ".dat")
-        with open(commit_file, 'rb') as commit:
-            while True:
-                try:
-                    deltas_info = pickle.load(commit)
-                    go_to_previous_state(path, deltas_info)
-                except EOFError:
-                    break
+    go_through_commits(path, repo, resets_track, True)
 
     new_head_commit = CommitInfo()
     with open(repo.commits, 'rb') as f:
@@ -165,6 +160,22 @@ def reset(path, tag=None, steps_back=None):
     repo.rewrite_head(new_head_commit.commit)
     repo.rewrite_branch_head(new_head_commit)
     print('Resetting finished.')
+
+
+def go_through_commits(path, repo, commits_track, is_back):
+    while not commits_track.empty():
+        step_commit = commits_track.get()
+        commit_file = os.path.join(repo.objects, step_commit + ".dat")
+        with open(commit_file, 'rb') as commit:
+            while True:
+                try:
+                    deltas_info = pickle.load(commit)
+                    if is_back:
+                        go_to_previous_state(path, deltas_info)
+                    else:
+                        go_to_next_state(path, deltas_info)
+                except EOFError:
+                    break
 
 
 def update_last_state(path, repo, comparer):
@@ -236,6 +247,16 @@ def get_resets_track_by_tag(repo, track, current, final):
     track.put(current)
     prev_commit = repo.get_commit_info(current).prev_commit
     get_resets_track_by_tag(repo, track, prev_commit, final)
+
+
+def get_resets_track_by_steps(repo, track, current, steps):
+    if steps == 0:
+        return
+    if steps > 0 and current is None:
+        sys.exit("You put a greater number than the commits amount.\nRollback is impossible.")
+    track.put(current)
+    prev_commit = repo.get_commit_info(current).prev_commit
+    get_resets_track_by_steps(repo, track, prev_commit, steps - 1)
 
 
 def is_last_state_relevant(path, dir_comparer=None):
