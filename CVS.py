@@ -85,7 +85,10 @@ def commit(path, tag=None, comment=None):
     repo = RepositoryInfo(path)
     repo.check_repository()
     if os.path.getsize(repo.index) == 0:
-        sys.exit("Nothing to commit")
+        if not is_last_state_relevant(path):
+            sys.exit("Add changes before committing")
+        else:
+            sys.exit("Nothing to commit")
     print("Repository is OK, start committing.")
     print()
 
@@ -132,37 +135,38 @@ def log_commit(repo, commit, tag, comment):
 
 def reset(path, tag=None, steps_back=None):
     repo = RepositoryInfo(path)
-    repo.check_repository()
-    print("Repository is OK, start checking last commit.")
-    print()
-
-    relevant = is_last_state_relevant(path)
-    if (not relevant) or os.path.getsize(repo.index) > 0:
-        sys.exit("Your folder has uncommitted changes, commit before restoring.")
-    print("Last commit is relevant, start resetting.")
-    print()
+    checks_before_switching(path, repo)
 
     resets_track = queue.Queue()
     if tag is not None:
         tag_commit = repo.get_tag_commit(tag)
         get_resets_track_by_tag(repo, resets_track, repo.head, tag_commit)
     elif steps_back is not None:
-        get_resets_track_by_steps(repo, resets_track, repo.head, steps_back)
+        get_resets_track_by_steps(repo, resets_track, repo.head, int(steps_back), True)
     else:
         sys.exit("Put a tag or an amount of steps to reset")
 
-    go_through_commits(path, repo, resets_track, True)
-
-    new_head_commit = CommitInfo()
-    with open(repo.commits, 'rb') as f:
-        commit_dict = pickle.load(f)
-        new_head_commit = commit_dict[tag_commit]
-    repo.rewrite_head(new_head_commit.commit)
-    repo.rewrite_branch_head(new_head_commit)
+    new_head_commit = go_through_commits_return_current(path, repo, resets_track, True)
+    repo.rewrite_head(new_head_commit)
+    head_info = repo.get_commit_info(new_head_commit)
+    repo.rewrite_branch_head(head_info)
     print('Resetting finished.')
 
 
-def go_through_commits(path, repo, commits_track, is_back):
+def checks_before_switching(path, repo):
+    repo.check_repository()
+    print("Repository is OK, start checking last commit.")
+    print()
+
+    relevant = is_last_state_relevant(path)
+    if (not relevant) or os.path.getsize(repo.index) > 0:
+        sys.exit("Your folder has uncommitted changes, commit them before switching state.")
+    print("Last commit is relevant.")
+    print()
+
+
+def go_through_commits_return_current(path, repo, commits_track, is_back):
+    step_commit = None
     while not commits_track.empty():
         step_commit = commits_track.get()
         commit_file = os.path.join(repo.objects, step_commit + ".dat")
@@ -176,6 +180,11 @@ def go_through_commits(path, repo, commits_track, is_back):
                         go_to_next_state(path, deltas_info)
                 except EOFError:
                     break
+    if is_back:
+        info = repo.get_commit_info(step_commit)
+        return info.prev_commit
+    else:
+        return step_commit
 
 
 def update_last_state(path, repo, comparer):
@@ -249,14 +258,18 @@ def get_resets_track_by_tag(repo, track, current, final):
     get_resets_track_by_tag(repo, track, prev_commit, final)
 
 
-def get_resets_track_by_steps(repo, track, current, steps):
+def get_resets_track_by_steps(repo, track, current, steps, is_backward):
     if steps == 0:
         return
     if steps > 0 and current is None:
         sys.exit("You put a greater number than the commits amount.\nRollback is impossible.")
     track.put(current)
-    prev_commit = repo.get_commit_info(current).prev_commit
-    get_resets_track_by_steps(repo, track, prev_commit, steps - 1)
+    if is_backward:
+        prev_commit = repo.get_commit_info(current).prev_commit
+        get_resets_track_by_steps(repo, track, prev_commit, steps - 1)
+    else:
+        next_commit = repo.get_commit_info(current).next_on_branch
+        get_resets_track_by_steps(repo, track, next_commit, steps - 1)
 
 
 def is_last_state_relevant(path, dir_comparer=None):
@@ -266,6 +279,28 @@ def is_last_state_relevant(path, dir_comparer=None):
     return len(dir_comparer.added) == 0 and \
            len(dir_comparer.changed) == 0 and \
            len(dir_comparer.deleted) == 0
+
+
+def switch(path, tag=None, steps_back=None, steps_forward=None):
+    repo = RepositoryInfo(path)
+    checks_before_switching(path, repo)
+    switching_track = queue.Queue()
+    if tag is None:
+        head = None
+        if steps_back is not None:
+            get_resets_track_by_steps(repo, switching_track, repo.head, int(steps_back), True)
+            head = go_through_commits_return_current(path, repo, switching_track, True)
+        elif steps_forward is not None:
+            get_resets_track_by_steps(repo, switching_track, repo.head, int(steps_forward), False)
+            head = go_through_commits_return_current(path, repo, switching_track, False)
+        else:
+            sys.exit("Put a tag or an amount of steps to switch")
+        repo.rewrite_head(head)
+        head_info = repo.get_commit_info(head)
+        repo.rewrite_branch_head(head_info)
+        print('Switching finished.')
+    elif tag is not None:
+        pass
 
 
 def status(path):
@@ -332,10 +367,22 @@ def main():
             reset(args.path, steps_back=args.command[1])
         else:
             reset(args.path, tag=args.tag)
+    if args.command[0] == "switch":
+        if len(args.command) == 2:
+            sign = args.command[1][0]
+            if sign == '-':
+                switch(args.path, steps_back=args.command[1][1:])
+            if sign == '+':
+                switch(args.path, steps_forward=args.command[1][1:])
+        else:
+            switch(args.path, tag=args.tag)
     if args.command[0] == "status":
         status(args.path)
     if args.command[0] == "branch":
         branch(args.path, args.branchname)
+    if args.command[0] == "checkout":
+        pass
+    sys.exit("Incorrect input. Call -h or --help to read manual.")
 
 
 if __name__ == '__main__':
