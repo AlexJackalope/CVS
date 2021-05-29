@@ -326,9 +326,10 @@ def switch(path, tag=None, steps_back=None, steps_forward=None):
         tagged_info = repo.get_commit_info(tagged_commit)
         head_info = repo.get_head_commit_info()
         if tagged_info.branch == head_info.branch:
-            track, is_back = get_path_and_head_on_branch(head_info.branch,
-                                                                   head_info.commit,
-                                                                   tagged_info)
+            track, is_back = get_path_and_head_on_branch(repo,
+                                                         head_info.branch,
+                                                         head_info.commit,
+                                                         tagged_info)
             new_head = go_through_commits_return_current(path, repo, track, is_back)
     repo.rewrite_head(new_head)
     head_info = repo.get_commit_info(new_head)
@@ -337,39 +338,43 @@ def switch(path, tag=None, steps_back=None, steps_forward=None):
     print('Switching finished.')
 
 
-def get_path_and_head_on_branch(branch, start_commit, finish_commit_info):
+def get_path_and_head_on_branch(repo, branch, start_commit, finish_commit_info):
     """
     Возвращает две переменных: путь-очередь коммитов
     и флаг движения изменений назад по истории
     """
     commits_to_check = queue.Queue()
-    back = prev_on_branch(finish_commit_info)
-    next = next_on_branch(finish_commit_info, branch)
+    finish = CommitInfo()
+    finish.commit = finish_commit_info.commit
+    back = prev_on_branch(finish_commit_info.prev_commit, finish)
+    next = next_on_branch(finish_commit_info.get_next_commit_on_branch(branch), finish)
     commits_to_check.put(back)
     commits_to_check.put(next)
     while not commits_to_check.empty():
         checking = commits_to_check.get()
-        if checking.commit == start_commit:
-            return get_commits_track_and_head_by_linked(checking)
-        if checking.next_on_branch is None:
-            next = next_on_branch(checking)
-            commits_to_check.put(next)
-        else:
-            back = prev_on_branch(checking)
-            commits_to_check.put(back)
+        if checking.commit is not None:
+            if checking.commit == start_commit:
+                return get_commits_track_and_head_by_linked(checking)
+            checking_info = repo.get_commit_info(checking.commit)
+            if checking.next_on_branch is None:
+                next = next_on_branch(checking_info.get_next_commit_on_branch(branch), checking)
+                commits_to_check.put(next)
+            else:
+                back = prev_on_branch(checking_info.prev_commit, checking)
+                commits_to_check.put(back)
 
 
-def prev_on_branch(commit):
+def prev_on_branch(prev_commit, current):
     prev = CommitInfo()
-    prev.commit = commit.prev_commit
-    prev.next_on_branch = commit
+    prev.commit = prev_commit
+    prev.next_on_branch = current
     return prev
 
 
-def next_on_branch(commit, branch):
+def next_on_branch(next_commit, current):
     next = CommitInfo()
-    next.commit = commit.get_next_commit_on_branch(branch)
-    next.prev_commit = commit
+    next.commit = next_commit
+    next.prev_commit = current
     return next
 
 
