@@ -49,7 +49,7 @@ def add(path, files_to_add):
 
     with open(repo.index, 'ab') as index:
         pickle.dump(info, index)
-    update_last_state(path, dir_comparer)
+    update_last_state(path, repo, dir_comparer)
     print()
     print("Adding finished")
 
@@ -136,7 +136,7 @@ def reset(path, tag):
     print("Repository is OK, start checking last commit.")
     print()
     relevant = is_last_state_relevant(path)
-    if not relevant:
+    if (not relevant) or os.path.getsize(repo.index) > 0:
         sys.exit("Your folder has uncommitted changes, commit before restoring.")
     print("Last commit is relevant, start resetting.")
     print()
@@ -147,30 +147,28 @@ def reset(path, tag):
     while not resets_track.empty():
         step_commit = resets_track.get()
         commit_file = os.path.join(repo.objects, step_commit + ".dat")
-        deltas_info = {}
         with open(commit_file, 'rb') as commit:
             while True:
                 try:
                     deltas_info = pickle.load(commit)
-                    go_to_previous_state(path, repo, deltas_info)
+                    go_to_previous_state(path, deltas_info)
                 except EOFError:
-                    pass
+                    break
 
     new_head_commit = CommitInfo()
     with open(repo.commits, 'rb') as f:
         commit_dict = pickle.load(f)
         new_head_commit = commit_dict[tag_commit]
     repo.rewrite_head(new_head_commit.commit)
-    repo.rewrite_branch_head(new_head_commit.commit)
+    repo.rewrite_branch_head(new_head_commit)
     print('Resetting finished.')
 
 
-def update_last_state(path, comparer):
-    repo_path = os.path.join(path, "repository", "last_state")
-    delete_files(path, comparer.deleted)
+def update_last_state(path, repo, comparer):
+    delete_files(repo.last_state, comparer.deleted)
     for file in comparer.added:
         to_add = os.path.join(path, file)
-        copy_path = os.path.join(repo_path, file)
+        copy_path = os.path.join(repo.last_state, file)
         copy_dir_path = os.path.dirname(copy_path)
         if not os.path.exists(copy_dir_path):
             os.makedirs(copy_dir_path)
@@ -178,7 +176,7 @@ def update_last_state(path, comparer):
         shutil.copyfile(to_add, copy_path)
     for file in comparer.changed:
         changed = os.path.join(path, file)
-        copy_path = os.path.join(repo_path, file)
+        copy_path = os.path.join(repo.last_state, file)
         shutil.copyfile(changed, copy_path)
 
 
@@ -217,7 +215,7 @@ def get_resets_track(repo, track, current, final):
     if current == final:
         return
     track.put(current)
-    prev_commit = repo.get_commit_info().prev_commit
+    prev_commit = repo.get_commit_info(current).prev_commit
     get_resets_track(repo, track, prev_commit, final)
 
 
