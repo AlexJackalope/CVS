@@ -328,21 +328,31 @@ def switch(path, tag=None, steps_back=None, steps_forward=None):
         tagged_info = repo.get_commit_info(tagged_commit)
         head_info = repo.get_head_commit_info()
 
-        if head_info.branch in tagged_info.all_commit_branches():
+        if head_info.branch in tagged_info.all_commit_branches() or \
+                tagged_info.branch in head_info.all_commit_branches():
             switching_track, is_back = get_path_on_branch(repo,
                                                           head_info.branch,
                                                           head_info.commit,
                                                           tagged_info)
             new_head = go_through_commits_return_current(path, repo, switching_track, is_back)
         else:
-            paths = get_paths_through_branches(repo, head_info.commit, tagged_info)
-            for path_pair in paths:
-                path = path_pair[0]
-                is_back = path_pair[1]
-                new_head = go_through_commits_return_current(path, repo, switching_track, is_back)
+            new_head = switch_between_branches(path, repo, head_info, tagged_info)
     repo.rewrite_head(new_head)
     update_last_state(path, repo)
     print('Switching finished.')
+
+
+def switch_between_branches(path, repo, head_info, finish_commit_info):
+    """
+    Совершает переход к заданному коммиту, находящемуся на другой ветке,
+    возвращает коммит, ставший головным.
+    """
+    paths = get_paths_through_branches(repo, head_info.commit, finish_commit_info)
+    for path_pair in paths:
+        switching_track = path_pair[0]
+        is_back = path_pair[1]
+        new_head = go_through_commits_return_current(path, repo, switching_track, is_back)
+    return new_head
 
 
 def get_path_on_branch(repo, branch, start_commit, finish_commit_info):
@@ -396,12 +406,17 @@ def get_paths_through_branches(repo, start_commit, finish_commit_info):
 
 
 def add_nearest_commits_to_queue(queue, step, commit_info):
-    back_step = PathStep(step, commit_info.prev_commit, True)
-    queue.put(back_step)
+    if step.prev_step is None or \
+            (commit_info.prev_commit is not None and
+             commit_info.prev_commit != step.prev_step.commit):
+        back_step = PathStep(step, commit_info.prev_commit, False)
+        if back_step is not None:
+            queue.put(back_step)
     for next_commit in commit_info.get_all_next_commits():
-        if next_step != step.commit:
-            next_step = PathStep(step, next_commit, False)
-            queue.put(next)
+        if step.prev_step is None or\
+                next_commit != step.prev_step.commit:
+            next_step = PathStep(step, next_commit, True)
+            queue.put(next_step)
 
 
 def get_paths_by_link(path_step):
@@ -412,7 +427,7 @@ def get_paths_by_link(path_step):
     path_queue = queue.Queue()
     is_back = path_step.is_back
     while path_step is not None:
-        if path_step.is_back != is_back:
+        if path_step.is_back != is_back and path_step.is_back is not None:
             paths.append([path_queue, is_back])
             path_queue = queue.Queue()
             is_back = path_step.is_back
@@ -482,6 +497,24 @@ def branch(path, branch_name=None):
         print('Branch added')
 
 
+def checkout(path, branch_name):
+    repo = RepositoryInfo(path)
+    repo.check_repository()
+    if branch_name is None:
+        sys.exit("Put a name of branch to checkout.")
+    branch_head = repo.get_branch_head_commit(branch_name)
+    if branch_head is None:
+        sys.exit("No such branch. Call 'branch' to see repository's branches.")
+    head_info = repo.get_head_commit_info()
+    if head_info.branch == branch_name:
+        print("You are on branch. Switching to branch head commit.")
+    branch_head_info = repo.get_commit_info(branch_head)
+    new_head = switch_between_branches(path, repo, head_info, branch_head_info)
+    repo.rewrite_head(new_head)
+    update_last_state(path, repo)
+    print("Branch switching finished.")
+
+
 def log_branches(repo):
     current_branch = ''
     print("Branches:")
@@ -535,7 +568,7 @@ def main():
     elif args.command[0] == "branch":
         branch(args.path, args.branchname)
     elif args.command[0] == "checkout":
-        pass
+        checkout(args.path, args.branchname)
     else:
         sys.exit("Incorrect input. Call -h or --help to read manual.")
 

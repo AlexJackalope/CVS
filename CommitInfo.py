@@ -5,6 +5,12 @@ class CommitInfo:
     next_on_branch = None
     branches_next = {}
 
+    def __getstate__(self):
+        attributes = self.__dict__.copy()
+        attributes['branches_next'] = self.branches_next
+        attributes['prev_commit'] = self.prev_commit
+        return attributes
+
     def set_init_commit(self, commit):
         self.branch = 'main'
         self.commit = commit

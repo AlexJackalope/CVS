@@ -80,6 +80,18 @@ class RepositoryInfo:
                 except EOFError:
                     return None
 
+    def get_branch_head_commit(self, branch):
+        """Имя головного коммита ветки, None, если ветки не существует"""
+        with open(self.branches, 'rb') as branches:
+            try:
+                branches_dict = pickle.load(branches)
+                if branch in branches_dict:
+                    return branches_dict[branch]
+                else:
+                    return None
+            except EOFError:
+                sys.exit("Make your first commit to setup branches.")
+
     def add_tag(self, tag, tagged_commit):
         with open(self.tags, 'ab') as tags:
             tag_pair = TagPair(tag, tagged_commit)
@@ -146,10 +158,3 @@ class RepositoryInfo:
         commits_dict[commit_info.commit] = commit_info
         with open(self.commits, 'wb') as commits:
             pickle.dump(commits_dict, commits)
-        dict = None
-        with open(self.commits, 'rb') as commits:
-            try:
-                dict = pickle.load(commits)
-            except EOFError:
-                pass
-        a = 0
