@@ -29,6 +29,8 @@ class CommitInfo:
         self.next_on_branch = None
 
     def all_commit_branches(self):
+        if self.branch is None:
+            raise AttributeError('Commit branch is not initialized')
         branches = [self.branch]
         for branch in self.branches_next:
             branches.append(branch)
@@ -39,7 +41,7 @@ class CommitInfo:
             return self.next_on_branch
         if branch in self.branches_next:
             return self.branches_next[branch]
-        return None
+        raise ValueError(f'Commit {self.commit} is not on branch {branch}.')
 
     def get_all_next_commits(self):
         next = []

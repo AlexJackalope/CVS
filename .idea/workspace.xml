@@ -10,8 +10,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Python Unit Test" />
         <option value="Python Script" />
+        <option value="Python Unit Test" />
       </list>
     </option>
   </component>
@@ -28,7 +28,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
   </component>
-  <component name="RunManager" selected="Python.tests">
+  <component name="RunManager" selected="Python tests.Unittests for test.TestCommitInfo">
     <configuration name="CVS" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="CVS" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -71,6 +71,48 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="Unittests for test.TestCommitInfo" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="CVS" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test.TestCommitInfo&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unittests for test.TestCommitInfo.test_get_all_branches" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="CVS" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test.TestCommitInfo.test_get_all_branches&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unittests for test.TestCommitInfo.test_next_on_branch" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="CVS" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test.TestCommitInfo.test_next_on_branch&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
     <configuration name="Unittests for tests.MyTestCase.test_UnidiffRestorer" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
       <module name="CVS" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -89,9 +131,15 @@
       <item itemvalue="Python.CVS" />
       <item itemvalue="Python.tests" />
       <item itemvalue="Python tests.Unittests for tests.MyTestCase.test_UnidiffRestorer" />
+      <item itemvalue="Python tests.Unittests for test.TestCommitInfo.test_next_on_branch" />
+      <item itemvalue="Python tests.Unittests for test.TestCommitInfo" />
+      <item itemvalue="Python tests.Unittests for test.TestCommitInfo.test_get_all_branches" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python tests.Unittests for test.TestCommitInfo" />
+        <item itemvalue="Python tests.Unittests for test.TestCommitInfo.test_get_all_branches" />
+        <item itemvalue="Python tests.Unittests for test.TestCommitInfo.test_next_on_branch" />
         <item itemvalue="Python.tests" />
         <item itemvalue="Python tests.Unittests for tests.MyTestCase.test_UnidiffRestorer" />
       </list>
@@ -127,94 +175,64 @@
           <option name="timeStamp" value="74" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
-          <line>27</line>
-          <option name="timeStamp" value="76" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Comparers.py</url>
           <line>20</line>
           <option name="timeStamp" value="87" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>142</line>
-          <option name="timeStamp" value="165" />
+          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
+          <line>39</line>
+          <option name="timeStamp" value="203" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>145</line>
-          <option name="timeStamp" value="171" />
+          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
+          <line>40</line>
+          <option name="timeStamp" value="204" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>146</line>
-          <option name="timeStamp" value="173" />
+          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
+          <line>41</line>
+          <option name="timeStamp" value="205" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>147</line>
-          <option name="timeStamp" value="174" />
+          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
+          <line>42</line>
+          <option name="timeStamp" value="206" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>148</line>
-          <option name="timeStamp" value="175" />
+          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
+          <line>43</line>
+          <option name="timeStamp" value="207" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>149</line>
-          <option name="timeStamp" value="176" />
+          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
+          <line>46</line>
+          <option name="timeStamp" value="208" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>150</line>
-          <option name="timeStamp" value="177" />
+          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
+          <line>47</line>
+          <option name="timeStamp" value="209" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>151</line>
-          <option name="timeStamp" value="178" />
+          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
+          <line>48</line>
+          <option name="timeStamp" value="210" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>152</line>
-          <option name="timeStamp" value="179" />
+          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
+          <line>49</line>
+          <option name="timeStamp" value="211" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>153</line>
-          <option name="timeStamp" value="180" />
+          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
+          <line>50</line>
+          <option name="timeStamp" value="212" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>155</line>
-          <option name="timeStamp" value="182" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>154</line>
-          <option name="timeStamp" value="183" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>156</line>
-          <option name="timeStamp" value="184" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>157</line>
-          <option name="timeStamp" value="185" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>158</line>
-          <option name="timeStamp" value="186" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Comparers.py</url>
-          <line>159</line>
-          <option name="timeStamp" value="187" />
+          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
+          <line>51</line>
+          <option name="timeStamp" value="213" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
