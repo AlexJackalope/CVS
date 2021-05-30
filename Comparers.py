@@ -10,8 +10,8 @@ class DirContentComparer:
         self._root = path
         self._repository = os.path.join(self._root, "repository")
         self._last_state = os.path.join(self._repository, "last_state")
-        self._first_iter = True
         self._files = None
+        self._first_iter = True
         self.added = []
         self.deleted = []
         self.changed = []
@@ -84,6 +84,7 @@ class DirContentComparer:
             self.added.extend(self.relative_paths_to_files(requested_added))
             if len(new_dirs) > 0:
                 self.add_files_in_new_dirs(new_dirs)
+
 
 class FilesComparer:
     def __init__(self, file_pairs=None):

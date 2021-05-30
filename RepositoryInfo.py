@@ -115,12 +115,14 @@ class RepositoryInfo:
             pickle.dump(branches_dict, branches)
 
     def add_branch(self, branch):
+        """Добавление ветки в репозиторий"""
         head_commit = self.get_head_commit_info()
         head_commit.set_new_branch(branch)
         self.add_commit_info(head_commit)
         self._add_branch_to_branches(head_commit)
 
     def _add_branch_to_branches(self, branch_commit):
+        """Добавление ветки и её головного коммита в список веток"""
         branches_dict = {}
         with open(self.branches, 'rb') as branches:
             branches_dict = pickle.load(branches)
