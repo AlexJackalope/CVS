@@ -48,5 +48,6 @@ class CommitInfo:
         if self.next_on_branch is not None:
             next.append(self.next_on_branch)
         for commit in self.branches_next.values():
-            next.append(commit)
+            if commit is not None:
+                next.append(commit)
         return next

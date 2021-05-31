@@ -28,7 +28,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
   </component>
-  <component name="RunManager" selected="Python tests.Unittests for test.TestCommitInfo">
+  <component name="RunManager" selected="Python tests.Unittests for test_commit_info.TestCommitInfo">
     <configuration name="CVS" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="CVS" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -43,27 +43,6 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/CVS.py" />
       <option name="PARAMETERS" value="switch C:\Users\alexa\ForCVS -t=&quot;branch&quot;" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="tests" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="CVS" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Tests" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Tests/tests.py" />
-      <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -113,7 +92,7 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Unittests for tests.MyTestCase.test_UnidiffRestorer" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+    <configuration name="Unittests for test_commit_info.TestCommitInfo" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
       <module name="CVS" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -123,25 +102,39 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;tests.MyTestCase.test_UnidiffRestorer&quot;" />
+      <option name="_new_target" value="&quot;test_commit_info.TestCommitInfo&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unittests for test_commit_info.TestCommitInfo.test_get_all_next_commits" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="CVS" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_commit_info.TestCommitInfo.test_get_all_next_commits&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
     <list>
       <item itemvalue="Python.CVS" />
-      <item itemvalue="Python.tests" />
-      <item itemvalue="Python tests.Unittests for tests.MyTestCase.test_UnidiffRestorer" />
       <item itemvalue="Python tests.Unittests for test.TestCommitInfo.test_next_on_branch" />
       <item itemvalue="Python tests.Unittests for test.TestCommitInfo" />
       <item itemvalue="Python tests.Unittests for test.TestCommitInfo.test_get_all_branches" />
+      <item itemvalue="Python tests.Unittests for test_commit_info.TestCommitInfo" />
+      <item itemvalue="Python tests.Unittests for test_commit_info.TestCommitInfo.test_get_all_next_commits" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python tests.Unittests for test_commit_info.TestCommitInfo" />
+        <item itemvalue="Python tests.Unittests for test_commit_info.TestCommitInfo.test_get_all_next_commits" />
         <item itemvalue="Python tests.Unittests for test.TestCommitInfo" />
         <item itemvalue="Python tests.Unittests for test.TestCommitInfo.test_get_all_branches" />
         <item itemvalue="Python tests.Unittests for test.TestCommitInfo.test_next_on_branch" />
-        <item itemvalue="Python.tests" />
-        <item itemvalue="Python tests.Unittests for tests.MyTestCase.test_UnidiffRestorer" />
       </list>
     </recent_temporary>
   </component>
@@ -178,61 +171,6 @@
           <url>file://$PROJECT_DIR$/Comparers.py</url>
           <line>20</line>
           <option name="timeStamp" value="87" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
-          <line>39</line>
-          <option name="timeStamp" value="203" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
-          <line>40</line>
-          <option name="timeStamp" value="204" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
-          <line>41</line>
-          <option name="timeStamp" value="205" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
-          <line>42</line>
-          <option name="timeStamp" value="206" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
-          <line>43</line>
-          <option name="timeStamp" value="207" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
-          <line>46</line>
-          <option name="timeStamp" value="208" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
-          <line>47</line>
-          <option name="timeStamp" value="209" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
-          <line>48</line>
-          <option name="timeStamp" value="210" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
-          <line>49</line>
-          <option name="timeStamp" value="211" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
-          <line>50</line>
-          <option name="timeStamp" value="212" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/CommitInfo.py</url>
-          <line>51</line>
-          <option name="timeStamp" value="213" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
