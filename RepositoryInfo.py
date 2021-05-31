@@ -1,18 +1,13 @@
-import os, sys
+import os
+import sys
 import pickle
+from CommitInfo import CommitInfo
 
 
 class TagPair:
     def __init__(self, tag, commit):
         self.tag = tag
         self.commit = commit
-
-
-class Deltas:
-    def __init__(self, added, changed, deleted):
-        self.added = added
-        self.changed = changed
-        self.deleted = deleted
 
 
 class RepositoryInfo:
@@ -39,7 +34,6 @@ class RepositoryInfo:
     @property
     def head(self):
         """Имя головного коммита"""
-        head = ''
         with open(self._head_file, 'r') as f:
             head = f.read()
         return head
@@ -93,6 +87,7 @@ class RepositoryInfo:
                 sys.exit("Make your first commit to setup branches.")
 
     def add_tag(self, tag, tagged_commit):
+        """Добавление коммита в список по тэгу"""
         with open(self.tags, 'ab') as tags:
             tag_pair = TagPair(tag, tagged_commit)
             pickle.dump(tag_pair, tags)
@@ -123,7 +118,6 @@ class RepositoryInfo:
 
     def _add_branch_to_branches(self, branch_commit):
         """Добавление ветки и её головного коммита в список веток"""
-        branches_dict = {}
         with open(self.branches, 'rb') as branches:
             branches_dict = pickle.load(branches)
         branches_dict[branch_commit.branch] = branch_commit.commit
@@ -136,7 +130,6 @@ class RepositoryInfo:
 
     def get_commit_info(self, commit):
         """Информация о коммите по его имени"""
-        commit_info = None
         with open(self.commits, 'rb') as commits:
             commits_dict = pickle.load(commits)
             commit_info = commits_dict[commit]
@@ -160,3 +153,31 @@ class RepositoryInfo:
         commits_dict[commit_info.commit] = commit_info
         with open(self.commits, 'wb') as commits:
             pickle.dump(commits_dict, commits)
+
+    def is_current_branch_free(self):
+        """
+        Проверяет наличие следующего коммита у данного головного.
+        True, если ветка свободно для добавления коммита,
+        False, если в ветке есть следующий коммит.
+        """
+        head_info = self.get_head_commit_info()
+        return head_info.next_on_branch is None
+
+    def set_new_commit(self, commit_index):
+        """Добавление нового коммита в ветку и обновление информации репозитория"""
+        head_info = self.get_head_commit_info()
+        current_commit = CommitInfo()
+        if head_info is None:
+            current_commit.set_init_commit(commit_index)
+        else:
+            current_commit.set_next_commit_on_branch(head_info, commit_index)
+            self.add_commit_info(head_info)
+        self.add_commit_info(current_commit)
+        self.rewrite_head(commit_index)
+        self.rewrite_branch_head(current_commit)
+
+    def cut_branch_after_head(self):
+        head_info = self.get_head_commit_info()
+        head_info.next_on_branch = None
+        self.add_commit_info(head_info)
+        self.rewrite_branch_head(head_info)

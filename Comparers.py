@@ -5,6 +5,26 @@ import difflib
 import re
 
 
+class Deltas:
+    def __init__(self, path, repo, dir_comparer):
+        files_to_compare = [[os.path.join(repo.last_state, x),
+                           os.path.join(path, x)] for x in dir_comparer.changed]
+        files_comparer = FilesComparer(files_to_compare)
+        self.changed = files_comparer.compareFiles()
+        self.deleted = self._file_to_content(repo.last_state, dir_comparer.deleted)
+        self.added = self._file_to_content(path, dir_comparer.added)
+
+    @staticmethod
+    def _file_to_content(path, deleted_files):
+        """Возвращает словарь относительный путь к файлу - содержимое в виде массива строк"""
+        file_to_content = {}
+        for file in deleted_files:
+            abs_path = os.path.join(path, file)
+            os.chmod(abs_path, 0o777)
+            with open(abs_path, 'r') as f:
+                file_to_content[file] = f.readlines()
+        return file_to_content
+
 class DirContentComparer:
     def __init__(self, path):
         self._root = path

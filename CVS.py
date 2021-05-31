@@ -4,9 +4,9 @@ import os, sys
 import pickle
 import shutil
 import queue
-from Comparers import DirContentComparer, FilesComparer
 from CommitInfo import CommitInfo
-from RepositoryInfo import RepositoryInfo, Deltas
+from Comparers import DirContentComparer, FilesComparer, Deltas
+from RepositoryInfo import RepositoryInfo
 
 
 def is_dir_empty(path):
@@ -22,7 +22,7 @@ def init(path):
     os.mkdir(repo.last_state)
     for file in repo.repo_files:
         Path(file).touch()
-    print("Repository initialized")
+    print("Repository initialized.")
 
 
 def add(path, files_to_add):
@@ -34,19 +34,11 @@ def add(path, files_to_add):
     dir_comparer = DirContentComparer(path)
     dir_comparer.compare(files_to_add)
     if is_last_state_relevant(path, dir_comparer):
-        print("Adding finished, no changes")
+        print("Adding finished, no changes.")
         return
 
     status_console_log(path, dir_comparer)
-    filesToCompare = [[os.path.join(repo.last_state, x),
-                       os.path.join(path, x)] for x in dir_comparer.changed]
-    files_comparer = FilesComparer(filesToCompare)
-
-    diffs = files_comparer.compareFiles()
-    deleted = file_to_content(repo.last_state, dir_comparer.deleted)
-    added = file_to_content(path, dir_comparer.added)
-    info = Deltas(added, diffs, deleted)
-
+    info = Deltas(path, repo, dir_comparer)
     with open(repo.index, 'ab') as index:
         pickle.dump(info, index)
     update_last_state(path, repo)
@@ -54,74 +46,49 @@ def add(path, files_to_add):
     print("Adding finished")
 
 
-def status_console_log(path, comparer):
-    print("Added files:")
-    log_paths(path, comparer.added)
-    print("Deleted files:")
-    log_paths(path, comparer.deleted)
-    print("Changed files:")
-    log_paths(path, comparer.changed)
-
-
-def log_paths(path, to_log):
-    if len(to_log) == 0:
-        print("\tNo files")
-    else:
-        for file in to_log:
-            print("\t" + file)
-
-
-def file_to_content(path, deleted_files):
-    """Возвращает словарь относительный путь к файлу - содержимое в виде массива строк"""
-    file_to_content = {}
-    for file in deleted_files:
-        abs_path = os.path.join(path, file)
-        os.chmod(abs_path, 0o777)
-        with open(abs_path, 'r') as f:
-            file_to_content[file] = f.readlines()
-    return file_to_content
-
-
 def commit(path, tag=None, comment=None):
     repo = RepositoryInfo(path)
-    repo.check_repository()
-    if os.path.getsize(repo.index) == 0:
-        if not is_last_state_relevant(path):
-            sys.exit("Add changes before committing")
-        else:
-            sys.exit("Nothing to commit")
-    print("Repository is OK, start committing.")
-    print()
-
-    if tag is not None:
-        if repo.is_tag_in_repo_tree(tag):
-            sys.exit("This tag is already used, you can't give it to new commit")
+    commit_checks(path, repo, tag)
 
     commit_index = str(len(os.listdir(repo.objects)))
     commit_file = os.path.join(repo.objects, commit_index + ".dat")
     shutil.copyfile(repo.index, commit_file)
     repo.clear_index()
-
-    previous_commit = repo.get_head_commit_info()
-    current_commit = CommitInfo()
-    if previous_commit is None:
-        current_commit.set_init_commit(commit_index)
-    else:
-        current_commit.set_next_commit_on_branch(previous_commit, commit_index)
-        repo.add_commit_info(previous_commit)
+    repo.set_new_commit(commit_index)
 
     if tag is not None:
         repo.add_tag(tag, commit_index)
-    repo.add_commit_info(current_commit)
-    repo.rewrite_head(commit_index)
-    repo.rewrite_branch_head(current_commit)
 
     log_commit(repo, commit_index, tag, comment)
     if tag is not None:
-        print('Commited with tag:', tag)
+        print(f'Commited with tag: {tag}.')
     if comment is not None:
-        print('Comment:', comment)
-    print('Committing finished')
+        print(f'Comment: {comment}.')
+    print('Committing finished.')
+
+
+def commit_checks(path, repo, tag):
+    """
+    Осуществляет проверки до создания коммита,
+    выход из программы, если коммит невозможен.
+    """
+    repo.check_repository()
+
+    if os.path.getsize(repo.index) == 0:
+        if not is_last_state_relevant(path):
+            sys.exit("Add changes before committing.")
+        else:
+            sys.exit("Nothing to commit.")
+
+    if tag is not None:
+        if repo.is_tag_in_repo_tree(tag):
+            sys.exit("This tag is already used, you can't give it to new commit.")
+
+    if not repo.is_current_branch_free():
+        sys.exit("This commit already has next one. Create a branch to add.")
+
+    print("Repository is OK, start committing.")
+    print()
 
 
 def log_commit(repo, commit, tag, comment):
@@ -150,46 +117,9 @@ def reset(path, tag=None, steps_back=None):
 
     new_head_commit = go_through_commits_return_current(path, repo, resets_track, True)
     repo.rewrite_head(new_head_commit)
-    head_info = repo.get_commit_info(new_head_commit)
-    repo.rewrite_branch_head(head_info)
+    repo.cut_branch_after_head()
     update_last_state(path, repo)
     print('Resetting finished.')
-
-
-def checks_before_switching(path, repo):
-    """Проверки на целостность репозитория и актуальность последнего коммита"""
-    repo.check_repository()
-    print("Repository is OK, start checking last commit.")
-    print()
-
-    relevant = is_last_state_relevant(path)
-    if (not relevant) or os.path.getsize(repo.index) > 0:
-        sys.exit("Your folder has uncommitted changes, commit them before switching state.")
-    print("Last commit is relevant.")
-    print()
-
-
-def go_through_commits_return_current(path, repo, commits_track, is_back):
-    """Переход состояния папки вперёд или назад по истории коммитов внутри ветки"""
-    step_commit = None
-    while not commits_track.empty():
-        step_commit = commits_track.get()
-        commit_file = os.path.join(repo.objects, step_commit + ".dat")
-        with open(commit_file, 'rb') as commit:
-            while True:
-                try:
-                    deltas_info = pickle.load(commit)
-                    if is_back:
-                        go_to_previous_state(path, deltas_info)
-                    else:
-                        go_to_next_state(path, deltas_info)
-                except EOFError:
-                    break
-    if is_back:
-        info = repo.get_commit_info(step_commit)
-        return info.prev_commit
-    else:
-        return step_commit
 
 
 def update_last_state(path, repo):
@@ -262,6 +192,10 @@ def go_to_next_state(path, deltas):
 
 
 def get_resets_track_by_tag(repo, track, current, final):
+    """
+    Добавляет в очередь коммиты, которые нужно пройти
+    назад по ветке до коммита с заданным тэгом.
+    """
     if current == final:
         return
     track.put(current)
@@ -340,6 +274,42 @@ def switch(path, tag=None, steps_back=None, steps_forward=None):
     repo.rewrite_head(new_head)
     update_last_state(path, repo)
     print('Switching finished.')
+
+
+def checks_before_switching(path, repo):
+    """Проверки на целостность репозитория и актуальность последнего коммита"""
+    repo.check_repository()
+    print("Repository is OK, start checking last commit.")
+    print()
+
+    relevant = is_last_state_relevant(path)
+    if (not relevant) or os.path.getsize(repo.index) > 0:
+        sys.exit("Your folder has uncommitted changes, commit them before switching state.")
+    print("Last commit is relevant.")
+    print()
+
+
+def go_through_commits_return_current(path, repo, commits_track, is_back):
+    """Переход состояния папки вперёд или назад по истории коммитов внутри ветки"""
+    step_commit = None
+    while not commits_track.empty():
+        step_commit = commits_track.get()
+        commit_file = os.path.join(repo.objects, step_commit + ".dat")
+        with open(commit_file, 'rb') as commit:
+            while True:
+                try:
+                    deltas_info = pickle.load(commit)
+                    if is_back:
+                        go_to_previous_state(path, deltas_info)
+                    else:
+                        go_to_next_state(path, deltas_info)
+                except EOFError:
+                    break
+    if is_back:
+        info = repo.get_commit_info(step_commit)
+        return info.prev_commit
+    else:
+        return step_commit
 
 
 def switch_between_branches(path, repo, head_info, finish_commit_info):
@@ -485,6 +455,23 @@ def status(path):
             print("All tracked changes are added, commit them.")
     else:
         status_console_log(path, dir_comparer)
+
+
+def status_console_log(path, comparer):
+    print("Added files:")
+    log_paths(path, comparer.added)
+    print("Deleted files:")
+    log_paths(path, comparer.deleted)
+    print("Changed files:")
+    log_paths(path, comparer.changed)
+
+
+def log_paths(path, to_log):
+    if len(to_log) == 0:
+        print("\tNo files")
+    else:
+        for file in to_log:
+            print("\t" + file)
 
 
 def branch(path, branch_name=None):
