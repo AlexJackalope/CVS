@@ -493,7 +493,7 @@ def branch(path, branch_name=None):
     repo = RepositoryInfo(path)
     repo.check_repository()
     if branch_name is None:
-        log_branches(repo)
+        console_log_branches(repo)
     else:
         repo.add_branch(branch_name)
         print('Branch added')
@@ -517,7 +517,7 @@ def checkout(path, branch_name):
     print("Branch switching finished.")
 
 
-def log_branches(repo):
+def console_log_branches(repo):
     current_branch = ''
     print("Branches:")
     with open(repo.branches, 'rb') as branches:
@@ -547,7 +547,28 @@ def clearlog(path):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="CVS version control system.\n"
+                    "Commands:\n"
+                    "* init - initializes a repository in an empty folder\n"
+                    "* add - checks folder changes\n"
+                    "* commit - saves added changes\n"
+                    "\ttag on key -t - tag to turn to the commit\n"
+                    "\tcomment on key -c - just your commen\n"
+                    "* reset - returns to a commit on branch and cut all next commits. Two ways to call:\n"
+                    "\twith tag on key -t\n"
+                    "\twith amount of steps back\n"
+                    "* switch - changes a current state with commit, commits tree won't change.\n"
+                    "\tswitching on commit with tag\n"
+                    "\tswitching on branch: +n - n steps forward, -n - n steps back\n"
+                    "* status - current state of repository: information about uncommitted changes\n"
+                    "* branch"
+                    "\twithout keys shows list of branches and current\n"
+                    "\twith key -b adds a branch\n"
+                    "* checkout - turns to a head commit of branch on key -b\n"
+                    "* log - prints information about commit changes\n"
+                    "* clearlog - deletes information about commit changes\n",
+        formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("command", nargs='+', help="CVS command")
     parser.add_argument("path", help="path to a folder with repository")
     parser.add_argument("-b", "--branchname", help="name of branch to create/checkout")
