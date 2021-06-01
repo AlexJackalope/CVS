@@ -587,7 +587,7 @@ def parse_args():
                     "* add - checks folder changes\n"
                     "* commit - saves added changes\n"
                     "\ttag on key -t - tag to turn to the commit\n"
-                    "\tcomment on key -c - just your commen\n"
+                    "\tcomment on key -c - just your comment\n"
                     "* reset - returns to a commit on branch and "
                     "cut all next commits. Two ways to call:\n"
                     "\twith tag on key -t\n"
