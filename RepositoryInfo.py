@@ -161,7 +161,7 @@ class RepositoryInfo:
         False, если в ветке есть следующий коммит.
         """
         head_info = self.get_head_commit_info()
-        return head_info.next_on_branch is None
+        return head_info is None or head_info.next_on_branch is None
 
     def set_new_commit(self, commit_index):
         """Добавление нового коммита в ветку и обновление информации репозитория"""

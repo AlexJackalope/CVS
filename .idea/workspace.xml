@@ -28,7 +28,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
   </component>
-  <component name="RunManager" selected="Python tests.Unittests for test_commit_info.TestCommitInfo">
+  <component name="RunManager" selected="Python.CVS">
     <configuration name="CVS" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="CVS" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -42,7 +42,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/CVS.py" />
-      <option name="PARAMETERS" value="switch C:\Users\alexa\ForCVS -t=&quot;branch&quot;" />
+      <option name="PARAMETERS" value="log C:\Users\alexa\ForCVS" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -156,6 +156,21 @@
           <url>file://$PROJECT_DIR$/Comparers.py</url>
           <line>40</line>
           <option name="timeStamp" value="87" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/CVS.py</url>
+          <line>368</line>
+          <option name="timeStamp" value="88" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/CVS.py</url>
+          <line>403</line>
+          <option name="timeStamp" value="89" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/CVS.py</url>
+          <line>421</line>
+          <option name="timeStamp" value="90" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

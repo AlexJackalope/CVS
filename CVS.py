@@ -93,12 +93,11 @@ def commit_checks(path, repo, tag):
 
 def log_commit(repo, commit, tag, comment):
     with open(repo.logs, 'a') as logs:
-        logs.write("Commit")
+        logs.write(f"Commit {commit}\n")
         if tag is not None:
-            logs.write("Tag: " + tag)
+            logs.write(f"Tag: {tag}\n")
         if comment is not None:
-            logs.write("Comment: " + comment)
-        logs.write(commit)
+            logs.write(f"Comment: {comment}\n")
         logs.write('\n')
 
 
@@ -119,6 +118,7 @@ def reset(path, tag=None, steps_back=None):
     repo.rewrite_head(new_head_commit)
     repo.cut_branch_after_head()
     update_last_state(path, repo)
+    log_reset(repo, tag, steps_back)
     print('Resetting finished.')
 
 
@@ -139,6 +139,16 @@ def update_last_state(path, repo):
         changed = os.path.join(path, file)
         copy_path = os.path.join(repo.last_state, file)
         shutil.copyfile(changed, copy_path)
+
+
+def log_reset(repo, tag, steps):
+    with open(repo.logs, 'a') as logs:
+        logs.write(f"Reset on commit {commit}\n")
+        if tag is not None:
+            logs.write(f"With tag {tag}\n")
+        if steps is not None:
+            logs.write(f"{str(steps)} steps back\n")
+        logs.write("\n")
 
 
 def delete_files(path, to_delete):
@@ -241,7 +251,6 @@ def switch(path, tag=None, steps_back=None, steps_forward=None):
     repo = RepositoryInfo(path)
     checks_before_switching(path, repo)
     switching_track = queue.Queue()
-    new_head = None
     if tag is None:
         is_back = True
         if steps_back is not None:
@@ -274,6 +283,12 @@ def switch(path, tag=None, steps_back=None, steps_forward=None):
     repo.rewrite_head(new_head)
     update_last_state(path, repo)
     print('Switching finished.')
+
+
+def log_switching(repo):
+    with open(repo.logs, 'a') as logs:
+        logs.write(f"Switch on commit {commit}\n")
+        logs.write('\n')
 
 
 def checks_before_switching(path, repo):
@@ -514,6 +529,15 @@ def log_branches(repo):
     print("Current branch:", current_branch)
 
 
+def log(path):
+    repo = RepositoryInfo(path)
+    repo.check_repository()
+    with open(repo.logs, 'r') as logsfile:
+        logs = logsfile.read()
+    print(logs)
+    print('Logs printing finished.')
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("command", nargs='+', help="CVS command")
@@ -556,6 +580,8 @@ def main():
         branch(args.path, args.branchname)
     elif args.command[0] == "checkout":
         checkout(args.path, args.branchname)
+    elif args.command[0] == "log":
+        log(args.path)
     else:
         sys.exit("Incorrect input. Call -h or --help to read manual.")
 
