@@ -25,14 +25,14 @@ def init(path):
     print("Repository initialized.")
 
 
-def add(path, files_to_add):
+def add(path):
     repo = RepositoryInfo(path)
     repo.check_repository()
     print("Repository is OK, start comparing.")
     print()
 
     dir_comparer = DirContentComparer(path)
-    dir_comparer.compare(files_to_add)
+    dir_comparer.compare()
     if is_last_state_relevant(path, dir_comparer):
         print("Adding finished, no changes.")
         return
@@ -550,8 +550,6 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("command", nargs='+', help="CVS command")
     parser.add_argument("path", help="path to a folder with repository")
-    parser.add_argument("files", nargs='*',
-                        help="bunch of files to add (only for 'add' command)")
     parser.add_argument("-b", "--branchname", help="name of branch to create/checkout")
     parser.add_argument("-c", "--comment", help="comment for new commit")
     parser.add_argument("-t", "--tag", help="tag of the commit")
@@ -565,7 +563,7 @@ def main():
     elif args.command[0] == "init":
         init(args.path)
     elif args.command[0] == "add":
-        add(args.path, args.files)
+        add(args.path)
     elif args.command[0] == "commit":
         commit(args.path, args.tag, args.comment)
     elif args.command[0] == "reset":
