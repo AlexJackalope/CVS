@@ -1,6 +1,7 @@
 from pathlib import Path
 import argparse
-import os, sys
+import os
+import sys
 import pickle
 import shutil
 import queue
@@ -182,8 +183,8 @@ def go_to_previous_state(path, deltas):
         file_lines = ''
         with open(file, 'r') as f:
             file_lines = f.readlines()
-        prev_lines = FilesComparer().previous_file_version(file_lines,
-                                                            deltas.changed[file])
+        prev_lines = FilesComparer().previous_file_version(
+            file_lines, deltas.changed[file])
         with open(file, 'w') as f:
             f.writelines(prev_lines)
 
@@ -242,9 +243,9 @@ def is_last_state_relevant(path, dir_comparer=None):
     if dir_comparer is None:
         dir_comparer = DirContentComparer(path)
         dir_comparer.compare()
-    return len(dir_comparer.added) == 0 and \
-           len(dir_comparer.changed) == 0 and \
-           len(dir_comparer.deleted) == 0
+    return (len(dir_comparer.added) == 0 and
+            len(dir_comparer.changed) == 0 and
+            len(dir_comparer.deleted) == 0)
 
 
 def switch(path, tag=None, steps_back=None, steps_forward=None):
@@ -514,7 +515,14 @@ def checkout(path, branch_name):
     new_head = switch_between_branches(path, repo, head_info, branch_head_info)
     repo.rewrite_head(new_head)
     update_last_state(path, repo)
+    log_checkout(repo, branch_name)
     print("Branch switching finished.")
+
+
+def log_checkout(repo, branch):
+    with open(repo.logs, 'a') as logs:
+        logs.write(f"Switch on branch {branch}\n")
+        logs.write('\n')
 
 
 def console_log_branches(repo):
