@@ -83,10 +83,12 @@ def commit_checks(path, repo, tag):
 
     if tag is not None:
         if repo.is_tag_in_repo_tree(tag):
-            sys.exit("This tag is already used, you can't give it to new commit.")
+            sys.exit("This tag is already used, "
+                     "you can't give it to new commit.")
 
     if not repo.is_current_branch_free():
-        sys.exit("This commit already has next one. Create a branch to add.")
+        sys.exit("This commit already has next one. "
+                 "Create a branch to add.")
 
     print("Repository is OK, start committing.")
     print()
@@ -111,11 +113,13 @@ def reset(path, tag=None, steps_back=None):
         tag_commit = repo.get_tag_commit(tag)
         get_resets_track_by_tag(repo, resets_track, repo.head, tag_commit)
     elif steps_back is not None:
-        get_switch_back_track_by_steps(repo, resets_track, repo.head, int(steps_back))
+        get_switch_back_track_by_steps(repo, resets_track, repo.head,
+                                       int(steps_back))
     else:
         sys.exit("Put a tag or an amount of steps to reset")
 
-    new_head_commit = go_through_commits_return_current(path, repo, resets_track, True)
+    new_head_commit = go_through_commits_return_current(path, repo,
+                                                        resets_track, True)
     repo.rewrite_head(new_head_commit)
     repo.cut_branch_after_head()
     update_last_state(path, repo)
@@ -197,7 +201,8 @@ def go_to_next_state(path, deltas):
         file_lines = ''
         with open(file, 'r') as f:
             file_lines = f.readlines()
-        next_lines = FilesComparer().next_file_version(file_lines, deltas.changed[file])
+        next_lines = FilesComparer().next_file_version(file_lines,
+                                                       deltas.changed[file])
         with open(file, 'w') as f:
             f.writelines(next_lines)
 
@@ -218,7 +223,8 @@ def get_switch_back_track_by_steps(repo, track, current, steps):
     if steps == 0:
         return
     if steps > 0 and current is None:
-        sys.exit("You put a greater number than the commits amount.\nRollback is impossible.")
+        sys.exit("You put a greater number than the commits amount.\n"
+                 "Rollback is impossible.")
     track.put(current)
     prev_commit = repo.get_commit_info(current).prev_commit
     get_switch_back_track_by_steps(repo, track, prev_commit, steps - 1)
@@ -233,9 +239,11 @@ def get_switch_forward_track_by_steps(repo, track, current, branch, steps):
     else:
         next_commit = commit_info.branches_next[branch]
     if steps > 0 and next_commit is None:
-        sys.exit("You put a greater number than the commits amount.\nSwitching is impossible.")
+        sys.exit("You put a greater number than the commits amount.\n"
+                 "Switching is impossible.")
     track.put(next_commit)
-    get_switch_forward_track_by_steps(repo, track, next_commit, branch, steps - 1)
+    get_switch_forward_track_by_steps(repo, track, next_commit,
+                                      branch, steps - 1)
 
 
 def is_last_state_relevant(path, dir_comparer=None):
@@ -255,15 +263,18 @@ def switch(path, tag=None, steps_back=None, steps_forward=None):
     if tag is None:
         is_back = True
         if steps_back is not None:
-            get_switch_back_track_by_steps(repo, switching_track, repo.head, int(steps_back))
+            get_switch_back_track_by_steps(repo, switching_track,
+                                           repo.head, int(steps_back))
 
         elif steps_forward is not None:
             branch = repo.get_head_commit_info().branch
-            get_switch_forward_track_by_steps(repo, switching_track, repo.head, branch, int(steps_forward))
+            get_switch_forward_track_by_steps(repo, switching_track, repo.head,
+                                              branch, int(steps_forward))
             is_back = False
         else:
             sys.exit("Put a tag or an amount of steps to switch")
-        new_head = go_through_commits_return_current(path, repo, switching_track, is_back)
+        new_head = go_through_commits_return_current(path, repo,
+                                                     switching_track, is_back)
     else:
         tagged_commit = repo.get_tag_commit(tag)
         if tagged_commit is None:
@@ -278,9 +289,12 @@ def switch(path, tag=None, steps_back=None, steps_forward=None):
                                                           head_info.branch,
                                                           head_info.commit,
                                                           tagged_info)
-            new_head = go_through_commits_return_current(path, repo, switching_track, is_back)
+            new_head = go_through_commits_return_current(path, repo,
+                                                         switching_track,
+                                                         is_back)
         else:
-            new_head = switch_between_branches(path, repo, head_info, tagged_info)
+            new_head = switch_between_branches(path, repo,
+                                               head_info, tagged_info)
     repo.rewrite_head(new_head)
     update_last_state(path, repo)
     print('Switching finished.')
@@ -300,13 +314,17 @@ def checks_before_switching(path, repo):
 
     relevant = is_last_state_relevant(path)
     if (not relevant) or os.path.getsize(repo.index) > 0:
-        sys.exit("Your folder has uncommitted changes, commit them before switching state.")
+        sys.exit("Your folder has uncommitted changes, "
+                 "commit them before switching state.")
     print("Last commit is relevant.")
     print()
 
 
 def go_through_commits_return_current(path, repo, commits_track, is_back):
-    """Переход состояния папки вперёд или назад по истории коммитов внутри ветки"""
+    """
+    Переход состояния папки вперёд или назад по истории коммитов
+    внутри ветки
+    """
     step_commit = None
     while not commits_track.empty():
         step_commit = commits_track.get()
@@ -333,11 +351,13 @@ def switch_between_branches(path, repo, head_info, finish_commit_info):
     Совершает переход к заданному коммиту, находящемуся на другой ветке,
     возвращает коммит, ставший головным.
     """
-    paths = get_paths_through_branches(repo, head_info.commit, finish_commit_info)
+    paths = get_paths_through_branches(repo, head_info.commit,
+                                       finish_commit_info)
     for path_pair in paths:
         switching_track = path_pair[0]
         is_back = path_pair[1]
-        new_head = go_through_commits_return_current(path, repo, switching_track, is_back)
+        new_head = go_through_commits_return_current(path, repo,
+                                                     switching_track, is_back)
     return new_head
 
 
@@ -350,7 +370,8 @@ def get_path_on_branch(repo, branch, start_commit, finish_commit_info):
     finish = CommitInfo()
     finish.commit = finish_commit_info.commit
     back = prev_on_branch(finish_commit_info.prev_commit, finish)
-    next = next_on_branch(finish_commit_info.get_next_commit_on_branch(branch), finish)
+    next = next_on_branch(finish_commit_info.get_next_commit_on_branch(branch),
+                          finish)
     commits_to_check.put(back)
     commits_to_check.put(next)
     while not commits_to_check.empty():
@@ -360,7 +381,8 @@ def get_path_on_branch(repo, branch, start_commit, finish_commit_info):
                 return get_commits_track_and_head_by_linked(checking)
             checking_info = repo.get_commit_info(checking.commit)
             if checking.next_on_branch is None:
-                next = next_on_branch(checking_info.get_next_commit_on_branch(branch), checking)
+                next = next_on_branch(checking_info.get_next_commit_on_branch(
+                    branch), checking)
                 commits_to_check.put(next)
             else:
                 back = prev_on_branch(checking_info.prev_commit, checking)
@@ -382,7 +404,8 @@ def get_paths_through_branches(repo, start_commit, finish_commit_info):
     """
     commits_to_check = queue.Queue()
     finish_step = PathStep(None, finish_commit_info.commit)
-    add_nearest_commits_to_queue(commits_to_check, finish_step, finish_commit_info)
+    add_nearest_commits_to_queue(commits_to_check, finish_step,
+                                 finish_commit_info)
     while not commits_to_check.empty():
         checking = commits_to_check.get()
         if checking.commit == start_commit:
@@ -407,7 +430,8 @@ def add_nearest_commits_to_queue(queue, step, commit_info):
 
 def get_paths_by_link(path_step):
     """
-    По односвязному списку шагов возвращает список путей с соответствующим им направлениям.
+    По односвязному списку шагов возвращает список путей
+    с соответствующим им направлениям.
     """
     paths = []
     path_queue = queue.Queue()
@@ -466,7 +490,8 @@ def status(path):
     no_changes = is_last_state_relevant(path, dir_comparer)
     if no_changes:
         if os.path.getsize(repo.index) == 0:
-            print("Current state of folder is saved.\nNothing to add, nothing to commit.")
+            print("Current state of folder is saved.\n"
+                  "Nothing to add, nothing to commit.")
         else:
             print("All tracked changes are added, commit them.")
     else:
@@ -563,13 +588,17 @@ def parse_args():
                     "* commit - saves added changes\n"
                     "\ttag on key -t - tag to turn to the commit\n"
                     "\tcomment on key -c - just your commen\n"
-                    "* reset - returns to a commit on branch and cut all next commits. Two ways to call:\n"
+                    "* reset - returns to a commit on branch and "
+                    "cut all next commits. Two ways to call:\n"
                     "\twith tag on key -t\n"
                     "\twith amount of steps back\n"
-                    "* switch - changes a current state with commit, commits tree won't change.\n"
+                    "* switch - changes a current state with commit, "
+                    "commits tree won't change.\n"
                     "\tswitching on commit with tag\n"
-                    "\tswitching on branch: +n - n steps forward, -n - n steps back\n"
-                    "* status - current state of repository: information about uncommitted changes\n"
+                    "\tswitching on branch: +n - n steps forward, "
+                    "-n - n steps back\n"
+                    "* status - current state of repository: "
+                    "information about uncommitted changes\n"
                     "* branch"
                     "\twithout keys shows list of branches and current\n"
                     "\twith key -b adds a branch\n"
@@ -579,7 +608,8 @@ def parse_args():
         formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("command", nargs='+', help="CVS command")
     parser.add_argument("path", help="path to a folder with repository")
-    parser.add_argument("-b", "--branchname", help="name of branch to create/checkout")
+    parser.add_argument("-b", "--branchname", help="name of branch "
+                                                   "to create/checkout")
     parser.add_argument("-c", "--comment", help="comment for new commit")
     parser.add_argument("-t", "--tag", help="tag of the commit")
     return parser.parse_args()

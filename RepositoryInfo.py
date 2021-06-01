@@ -21,7 +21,9 @@ class RepositoryInfo:
         self.index = os.path.join(path, "repository", "index.dat")
         self.logs = os.path.join(path, "repository", "logs.txt")
         self.tags = os.path.join(path, "repository", "tags.dat")
-        self.repo_files = [self.branches, self.commits, self._head_file, self.index, self.logs, self.tags]
+        self.repo_files = \
+            [self.branches, self.commits, self._head_file,
+             self.index, self.logs, self.tags]
 
     @staticmethod
     def does_dir_exist(path):
@@ -164,7 +166,10 @@ class RepositoryInfo:
         return head_info is None or head_info.next_on_branch is None
 
     def set_new_commit(self, commit_index):
-        """Добавление нового коммита в ветку и обновление информации репозитория"""
+        """
+        Добавление нового коммита в ветку
+        и обновление информации репозитория
+        """
         head_info = self.get_head_commit_info()
         current_commit = CommitInfo()
         if head_info is None:

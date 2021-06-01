@@ -8,15 +8,20 @@ import re
 class Deltas:
     def __init__(self, path, repo, dir_comparer):
         files_to_compare = [[os.path.join(repo.last_state, x),
-                           os.path.join(path, x)] for x in dir_comparer.changed]
+                             os.path.join(path, x)]
+                            for x in dir_comparer.changed]
         files_comparer = FilesComparer(files_to_compare)
         self.changed = files_comparer.compareFiles()
-        self.deleted = self._file_to_content(repo.last_state, dir_comparer.deleted)
+        self.deleted = self._file_to_content(repo.last_state,
+                                             dir_comparer.deleted)
         self.added = self._file_to_content(path, dir_comparer.added)
 
     @staticmethod
     def _file_to_content(path, deleted_files):
-        """Возвращает словарь относительный путь к файлу - содержимое в виде массива строк"""
+        """
+        Возвращает словарь относительный путь к файлу,
+        т.е. содержимое в виде массива строк
+        """
         file_to_content = {}
         for file in deleted_files:
             abs_path = os.path.join(path, file)
@@ -24,6 +29,7 @@ class Deltas:
             with open(abs_path, 'r') as f:
                 file_to_content[file] = f.readlines()
         return file_to_content
+
 
 class DirContentComparer:
     def __init__(self, path):
@@ -82,8 +88,10 @@ class DirContentComparer:
         return list(map(lambda x: os.path.join(path, x), files))
 
     def relative_paths_to_files(self, files):
-        return list(map(lambda x: os.path.relpath(x, self._root)
-        if os.path.relpath(x, self._root) != '.' else '', files))
+        return list(
+            map(lambda x: os.path.relpath(x, self._root)
+                if os.path.relpath(x, self._root) != '.'
+                else '', files))
 
     def split_dirs_and_files(self, names):
         dirs = []
@@ -128,14 +136,16 @@ class FilesComparer:
     @staticmethod
     def previous_file_version(str_file2, deltas):
         """
-        По дельте и файлу последующей версии возвращает предыдущую версию файла
+        По дельте и файлу последующей версии
+        возвращает предыдущую версию файла
         """
         new_file = copy.deepcopy(str_file2)
         count_rem_str = 0
         for i in range(2, len(deltas)):
             if re.match(r'@@', deltas[i]) is None:
                 continue
-            add_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@', deltas[i])[2].split(',')
+            add_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@',
+                                deltas[i])[2].split(',')
             add_start_index = int(add_str[0])
             add_count = 1 if len(add_str) == 1 else int(add_str[1])
             for k in range(add_start_index, add_start_index + add_count):
@@ -144,7 +154,8 @@ class FilesComparer:
         for i in range(2, len(deltas)):
             if re.match(r'@@', deltas[i]) is None:
                 continue
-            rem_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@', deltas[i])[1].split(',')
+            rem_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@',
+                                deltas[i])[1].split(',')
             rem_start_index = int(rem_str[0])
             rem_count = 1 if len(rem_str) == 1 else int(rem_str[1])
             for k in range(rem_start_index, rem_start_index + rem_count):
@@ -161,7 +172,8 @@ class FilesComparer:
         for i in range(2, len(deltas)):
             if re.match(r'@@', deltas[i]) is None:
                 continue
-            rem_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@', deltas[i])[1].split(',')
+            rem_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@',
+                                deltas[i])[1].split(',')
             rem_start_index = int(rem_str[0])
             rem_count = 1 if len(rem_str) == 1 else int(rem_str[1])
             for k in range(rem_start_index, rem_start_index + rem_count):
@@ -170,11 +182,14 @@ class FilesComparer:
         for i in range(2, len(deltas)):
             if re.match(r'@@', deltas[i]) is None:
                 continue
-            rem_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@', deltas[i])[1].split(',')
+            rem_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@',
+                                deltas[i])[1].split(',')
             rem_count = 1 if len(rem_str) == 1 else int(rem_str[1])
-            add_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@', deltas[i])[2].split(',')
-            add_start_index = int(add_str[0])
+            add_str = re.search(r'@@ -([,\d]+) \+([,\d]+) @@',
+                                deltas[i])[2].split(',')
+            add_start = int(add_str[0])
             add_count = 1 if len(add_str) == 1 else int(add_str[1])
-            for k in range(add_start_index, add_start_index + add_count):
-                new_file.insert(k - 1, deltas[rem_count + i + k - add_start_index + 1][1:])
+            for k in range(add_start, add_start + add_count):
+                new_file.insert(k - 1,
+                                deltas[rem_count + i + k - add_start + 1][1:])
         return new_file
