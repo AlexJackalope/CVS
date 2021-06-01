@@ -538,6 +538,14 @@ def log(path):
     print('Logs printing finished.')
 
 
+def clearlog(path):
+    repo = RepositoryInfo(path)
+    repo.check_repository()
+    with open(repo.logs, 'w'):
+        pass
+    print('Logs cleared.')
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("command", nargs='+', help="CVS command")
@@ -582,6 +590,8 @@ def main():
         checkout(args.path, args.branchname)
     elif args.command[0] == "log":
         log(args.path)
+    elif args.command[0] == "clearlog":
+        clearlog(args.path)
     else:
         sys.exit("Incorrect input. Call -h or --help to read manual.")
 
