@@ -32,9 +32,9 @@ def add(path):
     print("Repository is OK, start comparing.")
     print()
 
-    dir_comparer = DirContentComparer(path)
+    dir_comparer = DirContentComparer(path, repo.ignore_patterns)
     dir_comparer.compare()
-    if is_last_state_relevant(path, dir_comparer):
+    if is_last_state_relevant(path, repo, dir_comparer):
         print("Adding finished, no changes.")
         return
 
@@ -60,7 +60,7 @@ def commit(path, tag=None, comment=None):
     if tag is not None:
         repo.add_tag(tag, commit_index)
 
-    log_commit(repo, commit_index, tag, comment)
+    log_commit(repo, repo.get_head_commit_info(), tag, comment)
     if tag is not None:
         print(f'Commited with tag: {tag}.')
     if comment is not None:
@@ -76,7 +76,7 @@ def commit_checks(path, repo, tag):
     repo.check_repository()
 
     if os.path.getsize(repo.index) == 0:
-        if not is_last_state_relevant(path):
+        if not is_last_state_relevant(path, repo):
             sys.exit("Add changes before committing.")
         else:
             sys.exit("Nothing to commit.")
@@ -94,9 +94,10 @@ def commit_checks(path, repo, tag):
     print()
 
 
-def log_commit(repo, commit, tag, comment):
+def log_commit(repo, commit_info, tag, comment):
     with open(repo.logs, 'a') as logs:
-        logs.write(f"Commit {commit}\n")
+        logs.write(f"Commit {commit_info.commit}\n")
+        logs.write(f"On branch {commit_info.branch}\n")
         if tag is not None:
             logs.write(f"Tag: {tag}\n")
         if comment is not None:
@@ -129,7 +130,7 @@ def reset(path, tag=None, steps_back=None):
 
 def update_last_state(path, repo):
     """Копирование состояния основной папки в last_state"""
-    comparer = DirContentComparer(path)
+    comparer = DirContentComparer(path, repo.ignore_patterns)
     comparer.compare()
     delete_files(repo.last_state, comparer.deleted)
     for file in comparer.added:
@@ -246,10 +247,10 @@ def get_switch_forward_track_by_steps(repo, track, current, branch, steps):
                                       branch, steps - 1)
 
 
-def is_last_state_relevant(path, dir_comparer=None):
+def is_last_state_relevant(path, repo, dir_comparer=None):
     """Проверка совпадения состояния основной папки и last_state"""
     if dir_comparer is None:
-        dir_comparer = DirContentComparer(path)
+        dir_comparer = DirContentComparer(path, repo.ignore_patterns)
         dir_comparer.compare()
     return (len(dir_comparer.added) == 0 and
             len(dir_comparer.changed) == 0 and
@@ -296,13 +297,16 @@ def switch(path, tag=None, steps_back=None, steps_forward=None):
             new_head = switch_between_branches(path, repo,
                                                head_info, tagged_info)
     repo.rewrite_head(new_head)
+    log_switching(repo)
     update_last_state(path, repo)
     print('Switching finished.')
 
 
 def log_switching(repo):
     with open(repo.logs, 'a') as logs:
-        logs.write(f"Switch on commit {commit}\n")
+        head = repo.get_head_commit_info()
+        logs.write(f"Switch on commit {head.commit}\n")
+        logs.write(f"On branch {head.branch}\n")
         logs.write('\n')
 
 
@@ -312,7 +316,7 @@ def checks_before_switching(path, repo):
     print("Repository is OK, start checking last commit.")
     print()
 
-    relevant = is_last_state_relevant(path)
+    relevant = is_last_state_relevant(path, repo)
     if (not relevant) or os.path.getsize(repo.index) > 0:
         sys.exit("Your folder has uncommitted changes, "
                  "commit them before switching state.")
@@ -485,9 +489,9 @@ def get_commits_track_and_head_by_linked(commit_info):
 def status(path):
     repo = RepositoryInfo(path)
     repo.check_repository()
-    dir_comparer = DirContentComparer(path)
+    dir_comparer = DirContentComparer(path, repo.ignore_patterns)
     dir_comparer.compare()
-    no_changes = is_last_state_relevant(path, dir_comparer)
+    no_changes = is_last_state_relevant(path, repo, dir_comparer)
     if no_changes:
         if os.path.getsize(repo.index) == 0:
             print("Current state of folder is saved.\n"
@@ -546,7 +550,7 @@ def checkout(path, branch_name):
 
 def log_checkout(repo, branch):
     with open(repo.logs, 'a') as logs:
-        logs.write(f"Switch on branch {branch}\n")
+        logs.write(f"Checkout on branch {branch}\n")
         logs.write('\n')
 
 

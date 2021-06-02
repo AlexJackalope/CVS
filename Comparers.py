@@ -32,8 +32,9 @@ class Deltas:
 
 
 class DirContentComparer:
-    def __init__(self, path):
+    def __init__(self, path, ignore_patterns=None):
         self._root = path
+        self._ignore = ignore_patterns
         self._repository = os.path.join(self._root, "repository")
         self._last_state = os.path.join(self._repository, "last_state")
         self._files = None
@@ -50,7 +51,16 @@ class DirContentComparer:
         self._first_iter = True
 
     def full_closure_compare(self, repo, orig):
-        cmp = filecmp.dircmp(repo, orig, ignore=["repository"])
+        ignore_list = ["repository", "CVSignore.txt"]
+        if self._ignore is not None:
+            for file in os.listdir(orig):
+                if os.path.isfile(os.path.join(orig, file)):
+                    for pattern in self._ignore:
+                        a = re.fullmatch(pattern, file)
+                        if re.fullmatch(pattern, file) is not None:
+                            ignore_list.append(file)
+                            break
+        cmp = filecmp.dircmp(repo, orig, ignore=ignore_list)
         relative_repo_folder = os.path.relpath(repo, self._last_state)
         if relative_repo_folder == '.':
             relative_repo_folder = ''

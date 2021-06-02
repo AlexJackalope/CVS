@@ -21,6 +21,10 @@ class RepositoryInfo:
         self.index = os.path.join(path, "repository", "index.dat")
         self.logs = os.path.join(path, "repository", "logs.txt")
         self.tags = os.path.join(path, "repository", "tags.dat")
+        self.ignore_patterns = None
+        if os.path.isfile(os.path.join(path, 'CVSignore.txt')):
+            with open(os.path.join(path, 'CVSignore.txt'), 'r') as ignore:
+                self.ignore_patterns = ignore.read().split('\n')
         self.repo_files = \
             [self.branches, self.commits, self._head_file,
              self.index, self.logs, self.tags]
