@@ -60,7 +60,7 @@ def commit(path, tag=None, comment=None):
     if tag is not None:
         repo.add_tag(tag, commit_index)
 
-    log_commit(repo, commit_index, tag, comment)
+    log_commit(repo, repo.get_head_commit_info(), tag, comment)
     if tag is not None:
         print(f'Commited with tag: {tag}.')
     if comment is not None:
@@ -94,9 +94,10 @@ def commit_checks(path, repo, tag):
     print()
 
 
-def log_commit(repo, commit, tag, comment):
+def log_commit(repo, commit_info, tag, comment):
     with open(repo.logs, 'a') as logs:
-        logs.write(f"Commit {commit}\n")
+        logs.write(f"Commit {commit_info.commit}\n")
+        logs.write(f"On branch {commit_info.branch}\n")
         if tag is not None:
             logs.write(f"Tag: {tag}\n")
         if comment is not None:
@@ -296,13 +297,16 @@ def switch(path, tag=None, steps_back=None, steps_forward=None):
             new_head = switch_between_branches(path, repo,
                                                head_info, tagged_info)
     repo.rewrite_head(new_head)
+    log_switching(repo)
     update_last_state(path, repo)
     print('Switching finished.')
 
 
 def log_switching(repo):
     with open(repo.logs, 'a') as logs:
-        logs.write(f"Switch on commit {commit}\n")
+        head = repo.get_head_commit_info()
+        logs.write(f"Switch on commit {head.commit}\n")
+        logs.write(f"On branch {head.branch}\n")
         logs.write('\n')
 
 
@@ -546,7 +550,7 @@ def checkout(path, branch_name):
 
 def log_checkout(repo, branch):
     with open(repo.logs, 'a') as logs:
-        logs.write(f"Switch on branch {branch}\n")
+        logs.write(f"Checkout on branch {branch}\n")
         logs.write('\n')
 
 
