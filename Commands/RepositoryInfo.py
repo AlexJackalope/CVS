@@ -30,6 +30,10 @@ class RepositoryInfo:
              self.index, self.logs, self.tags]
 
     @staticmethod
+    def is_dir_empty(path):
+        return not os.listdir(path)
+
+    @staticmethod
     def does_dir_exist(path):
         return os.path.exists(path) and os.path.isdir(path)
 

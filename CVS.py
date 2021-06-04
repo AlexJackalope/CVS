@@ -5,46 +5,10 @@ import sys
 import pickle
 import shutil
 import queue
+import Commands
+from Commands.RepositoryInfo import RepositoryInfo
 from CommitInfo import CommitInfo
-from Comparers import DirContentComparer, FilesComparer, Deltas
-from RepositoryInfo import RepositoryInfo
-
-
-def is_dir_empty(path):
-    return not os.listdir(path)
-
-
-def init(path):
-    if not is_dir_empty(path):
-        sys.exit("To initialize a repository choose an empty folder")
-    repo = RepositoryInfo(path)
-    os.mkdir(os.path.join(path, "repository"))
-    os.mkdir(repo.objects)
-    os.mkdir(repo.last_state)
-    for file in repo.repo_files:
-        Path(file).touch()
-    print("Repository initialized.")
-
-
-def add(path):
-    repo = RepositoryInfo(path)
-    repo.check_repository()
-    print("Repository is OK, start comparing.")
-    print()
-
-    dir_comparer = DirContentComparer(path, repo.ignore_patterns)
-    dir_comparer.compare()
-    if is_last_state_relevant(path, repo, dir_comparer):
-        print("Adding finished, no changes.")
-        return
-
-    status_console_log(path, dir_comparer)
-    info = Deltas(path, repo, dir_comparer)
-    with open(repo.index, 'ab') as index:
-        pickle.dump(info, index)
-    update_last_state(path, repo)
-    print()
-    print("Adding finished")
+from Comparers import DirContentComparer, FilesComparer
 
 
 def commit(path, tag=None, comment=None):
@@ -624,9 +588,9 @@ def main():
     if not RepositoryInfo.does_dir_exist(args.path):
         sys.exit("Given directory does not exist")
     elif args.command[0] == "init":
-        init(args.path)
+        Commands.init(args.path)
     elif args.command[0] == "add":
-        add(args.path)
+        Commands.add(args.path)
     elif args.command[0] == "commit":
         commit(args.path, args.tag, args.comment)
     elif args.command[0] == "reset":
