@@ -1,4 +1,4 @@
-from Commands.RepositoryInfo import RepositoryInfo
+from .RepositoryInfo import RepositoryInfo
 import os
 import pickle
 import shutil
@@ -7,6 +7,11 @@ from Comparers import DirContentComparer, Deltas
 
 
 class AddRepo(RepositoryInfo):
+    def add_info(self, info):
+        """Запись информации об изменениях в виде Deltas в файл index"""
+        with open(self.index, 'ab') as index:
+            pickle.dump(info, index)
+
     def is_last_state_relevant(self, dir_comparer=None):
         """Проверка совпадения состояния основной папки и last_state"""
         if dir_comparer is None:
@@ -15,11 +20,6 @@ class AddRepo(RepositoryInfo):
         return (len(dir_comparer.added) == 0 and
                 len(dir_comparer.changed) == 0 and
                 len(dir_comparer.deleted) == 0)
-
-    def add_info(self, info):
-        """Запись информации об изменениях в виде Deltas в файл index"""
-        with open(self.index, 'ab') as index:
-            pickle.dump(info, index)
 
     def update_last_state(self):
         """Копирование состояния основной папки в last_state"""
@@ -52,7 +52,11 @@ class AddRepo(RepositoryInfo):
 
 def add(path):
     repo = AddRepo(path)
-    repo.check_repository()
+    try:
+        repo.check_repository()
+    except repo.RepositoryCheckingException as e:
+        print(e)
+        return
     print("Repository is OK, start comparing.")
     print()
 

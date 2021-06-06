@@ -4,13 +4,37 @@ import pickle
 from CommitInfo import CommitInfo
 
 
-class TagPair:
-    def __init__(self, tag, commit):
-        self.tag = tag
-        self.commit = commit
-
-
 class RepositoryInfo:
+    class RepositoryCheckingException(Exception):
+        def __init__(self, message):
+            if message:
+                self.message = message
+
+        def __str__(self):
+            if self.message:
+                return f'Repository checking exception: {self.message}'
+            return 'Repository checking exception'
+
+    class TagException(Exception):
+        def __init__(self, message):
+            if message:
+                self.message = message
+
+        def __str__(self):
+            if self.message:
+                return f'Tag exception: {self.message}'
+            return 'Tag exception'
+
+    class CommitException(Exception):
+        def __init__(self, message):
+            if message:
+                self.message = message
+
+        def __str__(self):
+            if self.message:
+                return f'Commit exception: {self.message}'
+            return 'Commit exception'
+
     def __init__(self, path):
         self.path = path
         self.last_state = os.path.join(path, "repository", "last_state")
@@ -52,26 +76,17 @@ class RepositoryInfo:
         """Проверка существования служебных файлов репозитория"""
         repository = os.path.join(self.path, "repository")
         if not self.does_dir_exist(repository):
-            sys.exit("Repository is not initialized, "
-                     "call 'init' in an empty folder to do it.")
+            raise self.RepositoryCheckingException("Repository is not "
+                                                   "initialized, call 'init' "
+                                                   "in an empty folder "
+                                                   "to do it.")
         objects = RepositoryInfo.does_dir_exist(self.objects)
         last_state = RepositoryInfo.does_dir_exist(self.last_state)
         if not (objects and last_state):
-            sys.exit("Repository is damaged.")
+            raise self.RepositoryCheckingException("Repository is damaged")
         for file in self.repo_files:
             if not self.check_file(file):
-                sys.exit("Repository is damaged.")
-
-    def is_tag_in_repo_tree(self, tag):
-        """Проверка существования тэга"""
-        with open(self.tags, 'rb') as tags:
-            while True:
-                try:
-                    pair = pickle.load(tags)
-                    if tag == pair.tag:
-                        return True
-                except EOFError:
-                    return False
+                raise self.RepositoryCheckingException("Repository is damaged")
 
     def get_tag_commit(self, tag):
         """Имя коммита по тэгу, None, если тэга не существует"""
@@ -96,12 +111,6 @@ class RepositoryInfo:
             except EOFError:
                 sys.exit("Make your first commit to setup branches.")
 
-    def add_tag(self, tag, tagged_commit):
-        """Добавление коммита в список по тэгу"""
-        with open(self.tags, 'ab') as tags:
-            tag_pair = TagPair(tag, tagged_commit)
-            pickle.dump(tag_pair, tags)
-
     def rewrite_head(self, commit):
         """Установка головного коммита"""
         with open(self._head_file, 'w') as head:
@@ -118,25 +127,6 @@ class RepositoryInfo:
         branches_dict[commit_info.branch] = commit_info.commit
         with open(self.branches, 'wb') as branches:
             pickle.dump(branches_dict, branches)
-
-    def add_branch(self, branch):
-        """Добавление ветки в репозиторий"""
-        head_commit = self.get_head_commit_info()
-        head_commit.set_new_branch(branch)
-        self.add_commit_info(head_commit)
-        self._add_branch_to_branches(head_commit)
-
-    def _add_branch_to_branches(self, branch_commit):
-        """Добавление ветки и её головного коммита в список веток"""
-        with open(self.branches, 'rb') as branches:
-            branches_dict = pickle.load(branches)
-        branches_dict[branch_commit.branch] = branch_commit.commit
-        with open(self.branches, 'wb') as branches:
-            pickle.dump(branches_dict, branches)
-
-    def clear_index(self):
-        with open(self.index, 'wb'):
-            pass
 
     def get_commit_info(self, commit):
         """Информация о коммите по его имени"""
@@ -164,15 +154,6 @@ class RepositoryInfo:
         with open(self.commits, 'wb') as commits:
             pickle.dump(commits_dict, commits)
 
-    def is_current_branch_free(self):
-        """
-        Проверяет наличие следующего коммита у данного головного.
-        True, если ветка свободно для добавления коммита,
-        False, если в ветке есть следующий коммит.
-        """
-        head_info = self.get_head_commit_info()
-        return head_info is None or head_info.next_on_branch is None
-
     def set_new_commit(self, commit_index):
         """
         Добавление нового коммита в ветку
@@ -188,9 +169,3 @@ class RepositoryInfo:
         self.add_commit_info(current_commit)
         self.rewrite_head(commit_index)
         self.rewrite_branch_head(current_commit)
-
-    def cut_branch_after_head(self):
-        head_info = self.get_head_commit_info()
-        head_info.next_on_branch = None
-        self.add_commit_info(head_info)
-        self.rewrite_branch_head(head_info)
