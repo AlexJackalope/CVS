@@ -2,6 +2,7 @@ from .add import AddRepo
 import os
 from Comparers import DirContentComparer
 
+
 def status(path):
     repo = AddRepo(path)
     try:
@@ -31,7 +32,7 @@ def status_console_log(path, comparer):
     log_paths(path, comparer.changed)
 
 
-def log_paths(path, to_log):
+def log_paths(to_log):
     if len(to_log) == 0:
         print("\tNo files")
     else:

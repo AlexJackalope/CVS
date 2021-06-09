@@ -31,9 +31,9 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\alexa\Desktop\CVS\Commands" />
       <recent name="C:\Users\alexa\Desktop\CVS" />
       <recent name="C:\Users\alexa\Desktop\CVS\Comparers" />
-      <recent name="C:\Users\alexa\Desktop\CVS\Commands" />
     </key>
   </component>
   <component name="RunManager" selected="Python.CVS">
@@ -50,7 +50,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/CVS.py" />
-      <option name="PARAMETERS" value="commit C:\Users\alexa\ForCVS -t=&quot;a&quot;" />
+      <option name="PARAMETERS" value="switch C:\Users\alexa\ForCVS -t=&quot;0&quot;" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -161,9 +161,19 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Commands/commit.py</url>
-          <line>70</line>
-          <option name="timeStamp" value="105" />
+          <url>file://$PROJECT_DIR$/Commands/switch.py</url>
+          <line>116</line>
+          <option name="timeStamp" value="106" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Commands/switch.py</url>
+          <line>129</line>
+          <option name="timeStamp" value="110" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Commands/switch.py</url>
+          <line>126</line>
+          <option name="timeStamp" value="111" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
