@@ -29,7 +29,6 @@ def reset(path, tag=None, steps_back=None):
         print(e)
         return
 
-
     resets_track = queue.Queue()
     try:
         if tag is not None:

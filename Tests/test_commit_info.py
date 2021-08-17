@@ -39,8 +39,10 @@ class TestCommitInfo(unittest.TestCase):
         self.assertIsNone(current.get_next_commit_on_branch('main'))
         current.next_on_branch = 'main next'
         current.branches_next['branch'] = 'next on branch'
-        self.assertEqual(current.get_next_commit_on_branch('main'), 'main next')
-        self.assertEqual(current.get_next_commit_on_branch('branch'), 'next on branch')
+        self.assertEqual(current.get_next_commit_on_branch('main'),
+                         'main next')
+        self.assertEqual(current.get_next_commit_on_branch('branch'),
+                         'next on branch')
         with self.assertRaises(ValueError):
             a = current.get_next_commit_on_branch('no')
 

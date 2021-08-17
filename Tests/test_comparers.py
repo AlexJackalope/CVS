@@ -49,7 +49,8 @@ class TestFileComparerRestoring(unittest.TestCase):
     def comparing(self, start, finish):
         diff = difflib.unified_diff(start, finish, n=0)
         delta = [x for x in diff]
-        self.assertEqual(FilesComparer.previous_file_version(finish, delta), start)
+        self.assertEqual(FilesComparer.previous_file_version(finish, delta),
+                         start)
         self.assertEqual(FilesComparer.next_file_version(start, delta), finish)
 
     def test_restore_string_adding(self):

@@ -130,9 +130,9 @@
     </configuration>
     <list>
       <item itemvalue="Python.CVS" />
-      <item itemvalue="Python tests.Unittests for test.TestCommitInfo.test_next_on_branch" />
       <item itemvalue="Python tests.Unittests for test.TestCommitInfo" />
       <item itemvalue="Python tests.Unittests for test.TestCommitInfo.test_get_all_branches" />
+      <item itemvalue="Python tests.Unittests for test.TestCommitInfo.test_next_on_branch" />
       <item itemvalue="Python tests.Unittests for test_commit_info.TestCommitInfo" />
       <item itemvalue="Python tests.Unittests for test_commit_info.TestCommitInfo.test_get_all_next_commits" />
     </list>
