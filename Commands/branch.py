@@ -40,15 +40,15 @@ class BranchRepo(RepositoryInfo):
             pickle.dump(branches_dict, branches)
 
 
-def branch(path, branch_name=None):
-    repo = BranchRepo(path)
+def branch(args):
+    repo = BranchRepo(args.path)
     try:
         repo.check_repository()
     except repo.RepositoryCheckingException as e:
         print(e)
         return
-    if branch_name is None:
+    if args.branchname is None:
         repo.print_all_branches()
     else:
-        repo.add_branch(branch_name)
+        repo.add_branch(args.branchname)
         print('Branch added')

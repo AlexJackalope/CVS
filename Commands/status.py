@@ -3,16 +3,16 @@ import os
 from Comparers import DirContentComparer
 
 
-def status(path):
-    repo = AddRepo(path)
+def status(args):
+    repo = AddRepo(args.path)
     try:
         repo.check_repository()
     except repo.RepositoryCheckingException as e:
         print(e)
         return
-    dir_comparer = DirContentComparer(path, repo.ignore_patterns)
+    dir_comparer = DirContentComparer(args.path, repo.ignore_patterns)
     dir_comparer.compare()
-    no_changes = repo.is_last_state_relevant(path, repo, dir_comparer)
+    no_changes = repo.is_last_state_relevant(args.path, repo, dir_comparer)
     if no_changes:
         if os.path.getsize(repo.index) == 0:
             print("Current state of folder is saved.\n"
@@ -20,7 +20,7 @@ def status(path):
         else:
             print("All tracked changes are added, commit them.")
     else:
-        status_console_log(path, dir_comparer)
+        status_console_log(args.path, dir_comparer)
 
 
 def status_console_log(path, comparer):

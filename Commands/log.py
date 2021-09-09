@@ -1,8 +1,8 @@
 from .RepositoryInfo import RepositoryInfo
 
 
-def log(path):
-    repo = RepositoryInfo(path)
+def log(args):
+    repo = RepositoryInfo(args.path)
     repo.check_repository()
     with open(repo.logs, 'r') as logsfile:
         logs = logsfile.read()
@@ -10,8 +10,8 @@ def log(path):
     print('Logs printing finished.')
 
 
-def clearlog(path):
-    repo = RepositoryInfo(path)
+def clearlog(args):
+    repo = RepositoryInfo(args.path)
     repo.check_repository()
     with open(repo.logs, 'w'):
         pass

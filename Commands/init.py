@@ -13,9 +13,9 @@ class RepoInit(RepositoryInfo):
         print("Repository initialized.")
 
 
-def init(path):
-    if not RepositoryInfo.is_dir_empty(path):
+def init(args):
+    if not RepositoryInfo.is_dir_empty(args.path):
         print("To initialize a repository choose an empty folder")
         return
-    repo = RepoInit(path)
+    repo = RepoInit(args.path)
     repo.init()

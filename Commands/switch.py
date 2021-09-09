@@ -113,8 +113,20 @@ class SwitchingRepo(AddRepo):
                 f.writelines(content)
 
 
-def switch(path, tag=None, steps_back=None, steps_forward=None):
-    repo = SwitchingRepo(path)
+def switch(args):
+    tag = None
+    steps_back = None
+    steps_forward = None
+    if len(args.command) == 2:
+        sign = args.command[1][0]
+        if sign == '-':
+            steps_back = args.command[1][1:]
+        if sign == '+':
+            steps_forward = args.command[1][1:]
+    else:
+        tag = args.tag
+
+    repo = SwitchingRepo(args.path)
     try:
         repo.checks_before_switching()
     except (repo.CommitException, repo.RepositoryCheckingException) as e:

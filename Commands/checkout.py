@@ -16,24 +16,24 @@ class CheckoutRepo(SwitchingRepo, BranchRepo):
             print("You are on branch. Switching to branch head commit.")
 
 
-def checkout(path, branch_name):
-    repo = CheckoutRepo(path)
+def checkout(args):
+    repo = CheckoutRepo(args.path)
     try:
-        repo.checkout_checks(branch_name)
+        repo.checkout_checks(args.branchname)
     except (repo.BranchException, repo.RepositoryCheckingException) as e:
         print(e)
         return
-    branch_head = repo.get_branch_head_commit(branch_name)
+    branch_head = repo.get_branch_head_commit(args.branchname)
     branch_head_info = repo.get_commit_info(branch_head)
     new_head = repo.switch_between_branches(branch_head_info)
     repo.rewrite_head(new_head)
     repo.update_last_state()
-    _log_checkout(repo, branch_name)
+    _log_checkout(repo, args.branchname)
     print("Branch switching finished.")
 
 
 def _log_checkout(repo, branch):
-    """апись о смене ветки в логи"""
+    """Запись о смене ветки в логи"""
     with open(repo.logs, 'a') as logs:
         logs.write(f"Checkout on branch {branch}\n")
         logs.write('\n')

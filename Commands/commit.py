@@ -67,10 +67,10 @@ class CommitRepo(AddRepo):
             pickle.dump(tag_pair, tags)
 
 
-def commit(path, tag=None, comment=None):
-    repo = CommitRepo(path)
+def commit(args):
+    repo = CommitRepo(args.path)
     try:
-        repo.commit_checks(tag)
+        repo.commit_checks(args.tag)
     except (repo.RepositoryCheckingException, repo.CommitException,
             repo.TagException) as e:
         print(e)
@@ -82,14 +82,14 @@ def commit(path, tag=None, comment=None):
     repo.clear_index()
     repo.set_new_commit(commit_index)
 
-    if tag is not None:
-        repo.add_tag(tag, commit_index)
+    if args.tag is not None:
+        repo.add_tag(args.tag, commit_index)
 
-    _log_commit(repo, repo.get_head_commit_info(), tag, comment)
-    if tag is not None:
-        print(f'Commited with tag: {tag}.')
-    if comment is not None:
-        print(f'Comment: {comment}.')
+    _log_commit(repo, repo.get_head_commit_info(), args.tag, args.comment)
+    if args.tag is not None:
+        print(f'Commited with tag: {args.tag}.')
+    if args.comment is not None:
+        print(f'Comment: {args.comment}.')
     print('Committing finished.')
 
 

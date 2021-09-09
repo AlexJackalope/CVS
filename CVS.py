@@ -1,7 +1,6 @@
 import argparse
 import sys
 import Commands
-from Commands.RepositoryInfo import RepositoryInfo
 
 
 def parse_args():
@@ -49,40 +48,17 @@ def main():
     args = parse_args()
     if len(args.command) > 2:
         sys.exit("Input is wrong, please check it again.")
-    if not RepositoryInfo.does_dir_exist(args.path):
+    if not Commands.RepositoryInfo.does_dir_exist(args.path):
         sys.exit(f"Given directory {args.path} does not exist.")
-    elif args.command[0] == "init":
-        Commands.init(args.path)
-    elif args.command[0] == "add":
-        Commands.add(args.path)
-    elif args.command[0] == "commit":
-        Commands.commit(args.path, args.tag, args.comment)
-    elif args.command[0] == "reset":
-        if len(args.command) == 2:
-            Commands.reset(args.path, steps_back=args.command[1])
-        else:
-            Commands.reset(args.path, tag=args.tag)
-    elif args.command[0] == "switch":
-        if len(args.command) == 2:
-            sign = args.command[1][0]
-            if sign == '-':
-                Commands.switch(args.path, steps_back=args.command[1][1:])
-            if sign == '+':
-                Commands.switch(args.path, steps_forward=args.command[1][1:])
-        else:
-            Commands.switch(args.path, tag=args.tag)
-    elif args.command[0] == "status":
-        Commands.status(args.path)
-    elif args.command[0] == "branch":
-        Commands.branch(args.path, args.branchname)
-    elif args.command[0] == "checkout":
-        Commands.checkout(args.path, args.branchname)
-    elif args.command[0] == "log":
-        Commands.log(args.path)
-    elif args.command[0] == "clearlog":
-        Commands.clearlog(args.path)
-    else:
-        sys.exit("Incorrect input. Call -h or --help to read manual.")
+
+    try:
+        if args.command[0] == 'RepositoryInfo':
+            raise AttributeError('Incorrect command input')
+        command = getattr(Commands, args.command[0])
+        command(args)
+    except Exception as e:
+        print(e)
+        print("Incorrect input. Call -h or --help to read manual.")
 
 
 if __name__ == '__main__':

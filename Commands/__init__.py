@@ -1,3 +1,4 @@
+from .RepositoryInfo import RepositoryInfo
 from .add import add
 from .branch import branch
 from .checkout import checkout

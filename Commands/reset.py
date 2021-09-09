@@ -21,8 +21,15 @@ class ResetRepo(SwitchingRepo):
         self.rewrite_branch_head(head_info)
 
 
-def reset(path, tag=None, steps_back=None):
-    repo = ResetRepo(path)
+def reset(args):
+    steps_back = None
+    tag = None
+    if len(args.command) == 2:
+        steps_back = args.command[1]
+    else:
+        tag = args.tag
+
+    repo = ResetRepo(args.path)
     try:
         repo.checks_before_switching()
     except (repo.CommitException, repo.RepositoryCheckingException) as e:

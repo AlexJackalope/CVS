@@ -50,8 +50,8 @@ class AddRepo(RepositoryInfo):
                 os.remove(absolute_file)
 
 
-def add(path):
-    repo = AddRepo(path)
+def add(args):
+    repo = AddRepo(args.path)
     try:
         repo.check_repository()
     except repo.RepositoryCheckingException as e:
@@ -60,14 +60,14 @@ def add(path):
     print("Repository is OK, start comparing.")
     print()
 
-    dir_comparer = DirContentComparer(path, repo.ignore_patterns)
+    dir_comparer = DirContentComparer(args.path, repo.ignore_patterns)
     dir_comparer.compare()
     if repo.is_last_state_relevant(dir_comparer):
         print("Adding finished, no changes.")
         return
 
     dir_comparer.status_console_log()
-    repo.add_info(Deltas(path, repo, dir_comparer))
+    repo.add_info(Deltas(args.path, repo, dir_comparer))
     repo.update_last_state()
     print()
     print("Adding finished")
